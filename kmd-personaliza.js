@@ -1,6 +1,8 @@
 /* KM Design · Personalización con tus tiempos · v1 */
 (function () {
-  if (window.__kmdPers) return; window.__kmdPers = 1;
+  var SUCCESS = !!window.__kmdSuccess || /\/checkout\/.*(success|confirm)/i.test(location.pathname);
+  if (SUCCESS) { if (window.__kmdSDone) return; window.__kmdSDone = 1; }
+  else { if (window.__kmdPers) return; window.__kmdPers = 1; }
   var FORM = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLScPqk1SEoXLmMhZd3fph1DUR4EKjJlty3tn0Gl2ELDXr1dtrw/formResponse';
   var ENTRY = 'entry.1436273367';
   var CDN = 'https://cdn.jsdelivr.net/gh/tomdemin-sudo/kmdesign-assets@main/';
@@ -31,7 +33,8 @@
   function css(t) { var s = document.createElement('style'); s.textContent = t; document.head.appendChild(s); }
 
   /* ---------- Página de confirmación (checkout) ---------- */
-  if (/\/checkout\//.test(location.pathname) || window.__kmdSuccess) {
+  if (/\/checkout\//.test(location.pathname) && !SUCCESS) return;
+  if (SUCCESS) {
     var list = ls(1).filter(function (r) { return !r.sent && Date.now() - r.ts < 7 * 864e5; });
     if (!list.length) return;
     var tries = 0;
@@ -39,9 +42,9 @@
       var txt = document.body ? document.body.innerText : '';
       var m = txt.match(/(?:orden|pedido|compra)[^#\d]{0,25}#?\s?(\d{2,8})/i) || txt.match(/#(\d{2,8})/);
       var num = (window.LS && LS.order && (LS.order.number || LS.order.id)) || (m && m[1]);
-      if (!num && tries++ < 20) return setTimeout(wait, 500);
+      if (!num && tries++ < 6) return setTimeout(wait, 500);
       var lines = list.map(function (r) { return r.name + ' → ' + r.times; }).join('\n');
-      post('✅ COMPRA CONFIRMADA\nPedido: #' + (num || '¿?') + '\nURL: ' + location.href.split('?')[0] + '\n' + lines);
+      post('✅ COMPRA CONFIRMADA\nPedido: #' + (num || '¿?') + '\nURL: ' + location.href.split('?')[0] + '\n' + lines + '\n(Chequeá en el pedido que la variante diga "Con mis tiempos")');
       ls(0, ls(1).map(function (r) { r.sent = 1; return r; }));
       var box = document.createElement('div');
       box.style.cssText = 'margin:16px auto;max-width:560px;padding:14px 16px;border-radius:10px;background:#fff7ed;border:1px solid #fb923c;color:#7c2d12;font:500 14px/1.45 Poppins,Arial,sans-serif';
