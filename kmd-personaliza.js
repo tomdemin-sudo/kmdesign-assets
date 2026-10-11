@@ -181,5 +181,42 @@
     document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-store^="product-form-"] .js-addtocart, [data-store^="product-form-"] [type=submit]')) check(e); }, true);
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { boot(0); }); else boot(0);
+  /* ---------- Kit MIS RÉCORDS: "te faltan $X para el envío gratis" ---------- */
+  var KIT_ID = 371553865, FREE_MIN = 60000;
+  function kit(n) {
+    if (!(window.LS && LS.product && LS.product.id === KIT_ID)) return;
+    var form = document.querySelector('[data-store^="product-form-"]') || document.querySelector('.js-product-form');
+    var sel = form && form.querySelector('select[name="variation[0]"]');
+    var anchor = document.querySelector('.product-price-container');
+    if (!sel || !anchor) { if ((n || 0) < 40) setTimeout(function () { kit((n || 0) + 1); }, 250); return; }
+    css('.kmd-kit-grp{width:100%!important;max-width:100%!important}' +
+      '.kmd-falta{display:none;align-items:center;gap:8px;margin:10px 0 4px;padding:9px 12px;border:1px dashed #fb923c;border-radius:10px;background:#1b1610;color:#fdba74;font-size:13px;line-height:1.35}' +
+      '.kmd-falta.on{display:flex}.kmd-falta b{color:#fb923c}.kmd-falta svg{flex:none}' +
+      '.kmd-falta-hide{display:none!important}');
+    var grp = sel.closest('.js-product-variants-group'); if (grp) grp.classList.add('kmd-kit-grp');
+    var box = document.createElement('div'); box.className = 'kmd-falta';
+    box.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="#fb923c"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9 1.96 2.5H17V9.5h2.5zM18 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg><span></span>';
+    anchor.appendChild(box);
+    var cartSub = (LS.cart && LS.cart.subtotal ? LS.cart.subtotal / 100 : 0);
+    function money(x) { return '$' + Math.ceil(x).toLocaleString('es-AR'); }
+    var last = '';
+    function upd() {
+      var o = sel.options[sel.selectedIndex];
+      var v = (LS.variants || []).filter(function (x) { return x.option0 === (o && (o.value || o.text)); })[0];
+      var q = parseInt((form.querySelector('input[name="quantity"]') || {}).value, 10) || 1;
+      var nat = document.querySelector('.js-free-shipping-minimum-message');
+      var key = (v && v.id) + '|' + q;
+      if (key === last) return; last = key;
+      var total = cartSub + (v ? v.price_number * q : 0);
+      if (!v || total >= FREE_MIN) { box.classList.remove('on'); if (nat) nat.classList.remove('kmd-falta-hide'); return; }
+      box.querySelector('span').innerHTML = 'Te faltan <b>' + money(FREE_MIN - total) + '</b> para el envío gratis. Con el <b>kit completo</b> ya lo tenés.';
+      box.classList.add('on'); if (nat) nat.classList.add('kmd-falta-hide');
+    }
+    sel.addEventListener('change', function () { last = ''; setTimeout(upd, 50); });
+    form.addEventListener('input', function () { last = ''; upd(); });
+    setInterval(upd, 400); upd();
+  }
+
+  function start() { boot(0); kit(0); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
