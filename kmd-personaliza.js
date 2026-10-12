@@ -181,40 +181,103 @@
     document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-store^="product-form-"] .js-addtocart, [data-store^="product-form-"] [type=submit]')) check(e); }, true);
   }
 
-  /* ---------- Kit MIS RÉCORDS: "te faltan $X para el envío gratis" ---------- */
-  var KIT_ID = 371553865, FREE_MIN = 60000;
+  /* ---------- Kit MIS RÉCORDS: distancias a elección ---------- */
+  var KIT_ID = 371553865, ADDON_ID = 373656430, FREE_MIN = 60000;
+  var DIST = [['5K','','5k','5K'],['10K','','10k','10K'],['15K','','15k','15K'],['21K','','21k','21K'],['Media','maratón','media','Media maratón'],
+              ['30K','','30k','30K'],['42K','','42k','42K'],['Maratón','','maraton','Maratón'],['IRONMAN','70.3','ironman703','IRONMAN 70.3'],['IRONMAN','','ironman','IRONMAN']];
+  /* ocultar las líneas de $0 en carrito y carrito lateral (en toda la tienda) */
+  css('[data-store="cart-item-' + ADDON_ID + '"]{display:none!important}');
+  function fixBadge() {
+    try {
+      if (!(window.LS && LS.cart && LS.cart.items)) return;
+      var extra = 0; LS.cart.items.forEach(function (i) { if (i.product_id === ADDON_ID) extra += i.quantity; });
+      if (!extra) return;
+      document.querySelectorAll('.js-cart-widget-amount').forEach(function (b) { var n = parseInt(b.textContent, 10); if (!isNaN(n) && !b.dataset.kmdFix) { b.dataset.kmdFix = 1; b.textContent = Math.max(0, n - extra); } });
+    } catch (e) {}
+  }
   function kit(n) {
+    fixBadge();
     if (!(window.LS && LS.product && LS.product.id === KIT_ID)) return;
     var form = document.querySelector('[data-store^="product-form-"]') || document.querySelector('.js-product-form');
     var sel = form && form.querySelector('select[name="variation[0]"]');
     var anchor = document.querySelector('.product-price-container');
     if (!sel || !anchor) { if ((n || 0) < 40) setTimeout(function () { kit((n || 0) + 1); }, 250); return; }
-    css('.kmd-kit-grp{width:100%!important;max-width:100%!important}' +
+    css('.kmd-hide{display:none!important}' +
+      '.kmd-k-lbl{font-size:13px;color:#e5e7eb;font-weight:600;margin:18px 0 2px}.kmd-k-sub{font-size:12px;color:#94a3b8;margin:0 0 10px}' +
+      '.kmd-k-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}@media(max-width:420px){.kmd-k-grid{gap:6px}}' +
+      '.kmd-k-chip{position:relative;border:1px solid #2a3340;background:#12161d;border-radius:10px;padding:11px 2px;text-align:center;font:700 13px Poppins,sans-serif;color:#fff;cursor:pointer;line-height:1.15;transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent}' +
+      '.kmd-k-chip span{display:block;font-size:10px;font-weight:500;color:#94a3b8;margin-top:2px}' +
+      '.kmd-k-chip.on{border-color:#fb923c;background:#1b1610}.kmd-k-chip.on span{color:#fdba74}.kmd-k-chip.on:after{content:"\\2713";position:absolute;top:3px;right:6px;font-size:11px;color:#fb923c}' +
+      '.kmd-k-sum{margin-top:14px;border:1px solid #2a3340;border-radius:12px;padding:12px 14px;background:#11141a;font-size:13px}' +
+      '.kmd-k-row{display:flex;justify-content:space-between;margin:3px 0}.kmd-k-row b{color:#fff}' +
+      '.kmd-k-tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.kmd-k-tag{background:#fb923c;color:#111;font-size:11px;font-weight:700;border-radius:6px;padding:3px 8px}' +
+      '.kmd-k-next{font-size:12px;color:#fdba74;margin-top:6px}.kmd-k-err{color:#f87171;font-size:13px;margin-top:8px;display:none}' +
       '.kmd-falta{display:none;align-items:center;gap:8px;margin:10px 0 4px;padding:9px 12px;border:1px dashed #fb923c;border-radius:10px;background:#1b1610;color:#fdba74;font-size:13px;line-height:1.35}' +
-      '.kmd-falta.on{display:flex}.kmd-falta b{color:#fb923c}.kmd-falta svg{flex:none}' +
-      '.kmd-falta-hide{display:none!important}');
-    var grp = sel.closest('.js-product-variants-group'); if (grp) grp.classList.add('kmd-kit-grp');
-    var box = document.createElement('div'); box.className = 'kmd-falta';
-    box.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="#fb923c"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9 1.96 2.5H17V9.5h2.5zM18 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg><span></span>';
-    anchor.appendChild(box);
-    var cartSub = (LS.cart && LS.cart.subtotal ? LS.cart.subtotal / 100 : 0);
-    function money(x) { return '$' + Math.ceil(x).toLocaleString('es-AR'); }
-    var last = '';
-    function upd() {
-      var o = sel.options[sel.selectedIndex];
-      var v = (LS.variants || []).filter(function (x) { return x.option0 === (o && (o.value || o.text)); })[0];
-      var q = parseInt((form.querySelector('input[name="quantity"]') || {}).value, 10) || 1;
-      var nat = document.querySelector('.js-free-shipping-minimum-message');
-      var key = (v && v.id) + '|' + q;
-      if (key === last) return; last = key;
-      var total = cartSub + (v ? v.price_number * q : 0);
-      if (!v || total >= FREE_MIN) { box.classList.remove('on'); if (nat) nat.classList.remove('kmd-falta-hide'); return; }
-      box.querySelector('span').innerHTML = 'Te faltan <b>' + money(FREE_MIN - total) + '</b> para el envío gratis. Con el <b>kit completo</b> ya lo tenés.';
-      box.classList.add('on'); if (nat) nat.classList.add('kmd-falta-hide');
+      '.kmd-falta.on{display:flex}.kmd-falta b{color:#fb923c}.kmd-falta svg{flex:none}.kmd-falta-hide{display:none!important}');
+    var varWrap = form.querySelector('.js-product-variants'); if (varWrap) varWrap.classList.add('kmd-hide');
+    var ui = document.createElement('div');
+    ui.innerHTML = '<div class="kmd-k-lbl">Elegí tus distancias</div><div class="kmd-k-sub">Tocá cada distancia que quieras en tu tablero. Una placa por distancia.</div>' +
+      '<div class="kmd-k-grid">' + DIST.map(function (d, i) { return '<div class="kmd-k-chip" data-i="' + i + '">' + d[0] + (d[1] ? '<span>' + d[1] + '</span>' : '') + '</div>'; }).join('') + '</div>' +
+      '<div class="kmd-k-sum"><div class="kmd-k-row"><span>Tu tablero</span><b class="kmd-k-n">Sin distancias</b></div><div class="kmd-k-tags"></div>' +
+      '<div class="kmd-k-row"><span>Total</span><b class="kmd-k-tot">-</b></div><div class="kmd-k-next">Elegí al menos una distancia.</div></div>' +
+      '<div class="kmd-k-err">Elegí al menos una distancia para agregar al carrito.</div>';
+    (varWrap || form.firstChild).parentNode.insertBefore(ui, varWrap || form.firstChild);
+    var falta = document.createElement('div'); falta.className = 'kmd-falta';
+    falta.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="#fb923c"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9 1.96 2.5H17V9.5h2.5zM18 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg><span></span>';
+    anchor.appendChild(falta);
+    var cartSub = 0; try { (LS.cart.items || []).forEach(function (i) { if (i.product_id !== KIT_ID) cartSub += (i.unit_price || 0) * i.quantity / 100; }); } catch (e) {}
+    var chosen = [];
+    function money(x) { return '$' + Math.round(x).toLocaleString('es-AR'); }
+    function vFor(c) { var name = c + (c === 1 ? ' placa' : ' placas'); return (LS.variants || []).filter(function (v) { return v.option0 === name; })[0]; }
+    function priceFor(c) { var v = vFor(c); return v ? v.price_number : (c > 10 ? priceFor(10) + 6000 * (c - 10) : 0); }
+    function qty() { return parseInt((form.querySelector('input[name="quantity"]') || {}).value, 10) || 1; }
+    function slideTo(key) {
+      var sw = document.querySelector('.js-swiper-product'); if (!sw || !sw.swiper) return;
+      var slides = sw.querySelectorAll('.swiper-slide');
+      for (var i = 0; i < slides.length; i++) {
+        var im = slides[i].querySelector('img'); var s = im ? (im.getAttribute('data-srcset') || im.getAttribute('srcset') || im.src || '') : '';
+        if (s.indexOf('placa_' + key + '-') > -1) { sw.swiper.slideTo(i); return; }
+      }
     }
-    sel.addEventListener('change', function () { last = ''; setTimeout(upd, 50); });
-    form.addEventListener('input', function () { last = ''; upd(); });
-    setInterval(upd, 400); upd();
+    function render() {
+      var c = chosen.length;
+      ui.querySelectorAll('.kmd-k-chip').forEach(function (el) { el.classList.toggle('on', chosen.indexOf(+el.dataset.i) > -1); });
+      ui.querySelector('.kmd-k-n').textContent = c ? c + (c === 1 ? ' placa' : ' placas') : 'Sin distancias';
+      ui.querySelector('.kmd-k-tags').innerHTML = chosen.slice().sort(function (a, b) { return a - b; }).map(function (i) { return '<span class="kmd-k-tag">' + DIST[i][3] + '</span>'; }).join('');
+      ui.querySelector('.kmd-k-tot').textContent = c ? money(priceFor(c) * qty()) : '-';
+      ui.querySelector('.kmd-k-next').textContent = c ? (c < DIST.length ? 'Sumá otra distancia por solo ' + money(priceFor(c + 1) - priceFor(c)) + '.' : 'Tenés todas las distancias.') : 'Elegí al menos una distancia.';
+      var total = cartSub + (c ? priceFor(c) * qty() : 0);
+      var nat = document.querySelector('.js-free-shipping-minimum-message');
+      if (!c || total >= FREE_MIN) { falta.classList.remove('on'); if (nat) nat.classList.toggle('kmd-falta-hide', !c); }
+      else { falta.querySelector('span').innerHTML = 'Te faltan <b>' + money(FREE_MIN - total) + '</b> para el envío gratis.'; falta.classList.add('on'); if (nat) nat.classList.add('kmd-falta-hide'); }
+    }
+    function setVariant() {
+      var c = Math.max(1, chosen.length), name = c + (c === 1 ? ' placa' : ' placas');
+      if (sel.value !== name && [].some.call(sel.options, function (o) { return o.value === name; })) { sel.value = name; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+    ui.querySelector('.kmd-k-grid').addEventListener('click', function (e) {
+      var el = e.target.closest('.kmd-k-chip'); if (!el) return;
+      var i = +el.dataset.i, p = chosen.indexOf(i);
+      if (p > -1) chosen.splice(p, 1); else chosen.push(i);
+      ui.querySelector('.kmd-k-err').style.display = 'none';
+      setVariant(); render();
+      if (p === -1) setTimeout(function () { slideTo(DIST[i][2]); }, 250);
+    });
+    form.addEventListener('input', render);
+    setVariant(); render();
+    var busy = false;
+    function onAdd(e) {
+      if (!chosen.length) { e.preventDefault(); e.stopImmediatePropagation(); ui.querySelector('.kmd-k-err').style.display = 'block'; return; }
+      if (busy) return; busy = true; setTimeout(function () { busy = false; }, 3000);
+      var q = qty(), list = chosen.slice().sort(function (a, b) { return a - b; });
+      list.forEach(function (i) {
+        var fd = new FormData(); fd.append('add_to_cart', String(ADDON_ID)); fd.append('variation[0]', 'placa ' + DIST[i][3]); fd.append('quantity', String(q));
+        fetch('/comprar/', { method: 'POST', body: fd, credentials: 'include', keepalive: true }).catch(function () {});
+      });
+      post('🧩 KIT AL CARRITO\n' + list.length + ' placas → ' + list.map(function (i) { return DIST[i][3]; }).join(' · ') + '\nCant: ' + q + '\n' + new Date().toLocaleString('es-AR'));
+    }
+    form.addEventListener('submit', onAdd, true);
+    document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-store^="product-form-"] .js-addtocart, [data-store^="product-form-"] [type=submit]')) onAdd(e); }, true);
   }
 
   function start() { boot(0); kit(0); }
