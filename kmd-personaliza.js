@@ -266,15 +266,24 @@
     form.addEventListener('input', render);
     setVariant(); render();
     var busy = false;
+    function addOne(pid, val, q) {
+      var fd = new FormData(); fd.append('add_to_cart', String(pid)); fd.append('variation[0]', val); fd.append('quantity', String(q));
+      return fetch('/comprar/', { method: 'POST', body: fd, credentials: 'include' }).then(function (r) { if (!r.ok) throw new Error('add ' + r.status); return r; });
+    }
     function onAdd(e) {
-      if (!chosen.length) { e.preventDefault(); e.stopImmediatePropagation(); ui.querySelector('.kmd-k-err').style.display = 'block'; return; }
-      if (busy) return; busy = true; setTimeout(function () { busy = false; }, 3000);
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (!chosen.length) { ui.querySelector('.kmd-k-err').style.display = 'block'; return; }
+      if (busy) return; busy = true;
       var q = qty(), list = chosen.slice().sort(function (a, b) { return a - b; });
-      list.forEach(function (i) {
-        var fd = new FormData(); fd.append('add_to_cart', String(ADDON_ID)); fd.append('variation[0]', 'placa ' + DIST[i][3]); fd.append('quantity', String(q));
-        fetch('/comprar/', { method: 'POST', body: fd, credentials: 'include', keepalive: true }).catch(function () {});
-      });
+      var btn = form.querySelector('[data-store="product-buy-button"], .js-addtocart[type=submit]');
+      if (btn) { btn.dataset.kmdTxt = btn.value; btn.value = 'AGREGANDO...'; btn.disabled = true; }
       post('🧩 KIT AL CARRITO\n' + list.length + ' placas → ' + list.map(function (i) { return DIST[i][3]; }).join(' · ') + '\nCant: ' + q + '\n' + new Date().toLocaleString('es-AR'));
+      /* en orden: primero el kit (crea el carrito si no existe), después cada placa */
+      var chain = addOne(KIT_ID, sel.value, q);
+      list.forEach(function (i) { chain = chain.then(function () { return addOne(ADDON_ID, 'placa ' + DIST[i][3], q); }); });
+      chain.then(function () { location.href = '/comprar/'; })
+        .catch(function () { busy = false; if (btn) { btn.value = btn.dataset.kmdTxt || 'AGREGAR AL CARRITO'; btn.disabled = false; }
+          ui.querySelector('.kmd-k-err').textContent = 'No se pudo agregar. Probá de nuevo.'; ui.querySelector('.kmd-k-err').style.display = 'block'; });
     }
     form.addEventListener('submit', onAdd, true);
     document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-store^="product-form-"] .js-addtocart, [data-store^="product-form-"] [type=submit]')) onAdd(e); }, true);
