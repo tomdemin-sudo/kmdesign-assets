@@ -202,6 +202,9 @@
       var inp = document.querySelector('[name="quantity[' + line + ']"]') || r.querySelector('input[type=number], .js-cart-quantity-input'), sm = r.querySelector('.name small'), l = ls[line] || {};
       out.push({ line: line, pid: +r.getAttribute('data-store').replace('cart-item-', ''), q: (inp && parseInt(inp.value, 10)) || l.quantity || 1, label: (sm && sm.textContent) || l.short_variant_name || '' });
     });
+    /* mantener LS.cart en línea con lo que se ve (para el contador del carrito) */
+    try { LS.cart.items = all.filter(function (i) { return seen[i.item_id]; });
+      LS.cart.items.forEach(function (i) { out.forEach(function (o) { if (o.line === i.item_id) i.quantity = o.q; }); }); } catch (e) {}
     return out;
   }
   function freshCart() { /* lee el carrito real del servidor (por si cambió en otra pestaña) */
