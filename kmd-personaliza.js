@@ -191,7 +191,18 @@
      Regla: en el carrito hay como máximo UN tablero = 1 línea de kit (N placas, cant q) + N líneas de $0 con cant q.
      Si se borra el kit, se borran sus placas. Si se cambia la cantidad del kit, se igualan las placas. */
   function cartItems() {
-    try { return (LS.cart.items || []).map(function (i) { return { line: i.item_id, pid: i.product_id, q: i.quantity, label: i.short_variant_name || '' }; }); } catch (e) { return []; }
+    /* el DOM del carrito es lo que está al día (LS.cart no se actualiza cuando el cliente borra o cambia algo) */
+    var ls = {}, all = [];
+    try { all = LS.cart.items || []; all.forEach(function (i) { ls[i.item_id] = i; }); } catch (e) {}
+    var rows = document.querySelectorAll('[data-store^="cart-item-"][data-item-id]');
+    if (!rows.length) return all.map(function (i) { return { line: i.item_id, pid: i.product_id, q: i.quantity, label: i.short_variant_name || '' }; });
+    var seen = {}, out = [];
+    rows.forEach(function (r) {
+      var line = +r.getAttribute('data-item-id'); if (seen[line]) return; seen[line] = 1;
+      var inp = document.querySelector('[name="quantity[' + line + ']"]') || r.querySelector('input[type=number], .js-cart-quantity-input'), sm = r.querySelector('.name small'), l = ls[line] || {};
+      out.push({ line: line, pid: +r.getAttribute('data-store').replace('cart-item-', ''), q: (inp && parseInt(inp.value, 10)) || l.quantity || 1, label: (sm && sm.textContent) || l.short_variant_name || '' });
+    });
+    return out;
   }
   function freshCart() { /* lee el carrito real del servidor (por si cambió en otra pestaña) */
     return fetch('/comprar/', { credentials: 'include', cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (h) {
@@ -204,12 +215,19 @@
       return out;
     });
   }
-  function setQty(line, q) {
+  function runOps(ops) { /* todos los cambios en un solo pedido; después se reflejan en la página */
+    if (!ops.length) return Promise.resolve();
     return fetch('/cart/update/', { method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With': 'XMLHttpRequest' },
-      body: 'quantity%5B' + line + '%5D=' + q }).then(function (r) { return r.json(); }).then(function (j) { if (!j.success) throw new Error('upd'); return j; });
+      body: ops.map(function (o) { return 'quantity%5B' + o[0] + '%5D=' + o[1]; }).join('&') })
+      .then(function (r) { return r.json(); }).then(function (j) { if (!j.success) throw new Error('upd');
+        ops.forEach(function (o) {
+          if (o[1] === 0) document.querySelectorAll('[data-item-id="' + o[0] + '"]').forEach(function (r) { r.remove(); });
+          document.querySelectorAll('[name="quantity[' + o[0] + ']"]').forEach(function (inp) { if (o[1] === 0) inp.remove(); else inp.value = o[1]; });
+          try { LS.cart.items = LS.cart.items.filter(function (i) { return !(i.item_id === o[0] && o[1] === 0); });
+            LS.cart.items.forEach(function (i) { if (i.item_id === o[0]) i.quantity = o[1]; }); } catch (e) {}
+        }); return j; });
   }
-  function runOps(ops) { var c = Promise.resolve(); ops.forEach(function (o) { c = c.then(function () { return setQty(o[0], o[1]); }); }); return c; }
   function nPlacas(label) { var m = /(\d+)\s*placa/.exec(label || ''); return m ? +m[1] : 0; }
   function planFix(items) {
     var kits = items.filter(function (i) { return i.pid === KIT_ID; }), adds = items.filter(function (i) { return i.pid === ADDON_ID; }), ops = [];
@@ -226,7 +244,8 @@
   }
   function showDist() { /* muestra las distancias debajo del kit en el carrito */
     try {
-      var adds = cartItems().filter(function (i) { return i.pid === ADDON_ID; }).map(function (a) { return a.label.replace(/[()]/g, '').replace(/^placa\s*/i, ''); });
+      var adds = cartItems().filter(function (i) { return i.pid === ADDON_ID; }).map(function (a) { return a.label.replace(/[()]/g, '').replace(/^placa\s*/i, '').trim(); })
+        .sort(function (a, b) { var o = DIST.map(function (d) { return d[3]; }); return o.indexOf(a) - o.indexOf(b); });
       document.querySelectorAll('[data-store="cart-item-' + KIT_ID + '"]').forEach(function (row) {
         var nm = row.querySelector('.name, .js-cart-item-name') || row; var t = row.querySelector('.kmd-dist');
         if (!adds.length) { if (t) t.remove(); return; }
@@ -243,10 +262,7 @@
     if (sig === lastSig) return; lastSig = sig;
     var ops = planFix(items); if (!ops.length) return;
     fixing = true;
-    runOps(ops).then(function () {
-      ops.forEach(function (o) { LS.cart.items = LS.cart.items.filter(function (i) { return !(i.item_id === o[0] && o[1] === 0); });
-        LS.cart.items.forEach(function (i) { if (i.item_id === o[0]) i.quantity = o[1]; }); });
-    }).catch(function () {}).then(function () { fixing = false; lastSig = ''; fixBadge(); showDist(); });
+    runOps(ops).catch(function () {}).then(function () { fixing = false; lastSig = ''; fixBadge(); showDist(); });
   }
   setInterval(reconcile, 1000);
   /* antes de ir al checkout, asegurar que no queden placas sueltas */
@@ -255,10 +271,7 @@
     if (!b || b.dataset.kmdOk) return;
     if (!cartItems().some(function (i) { return i.pid === KIT_ID || i.pid === ADDON_ID; })) return;
     e.preventDefault(); e.stopImmediatePropagation(); fixing = true;
-    freshCart().then(function (items) { var ops = planFix(items);
-        return runOps(ops).then(function () { /* que el form del carrito no vuelva a mandar las cantidades viejas */
-          ops.forEach(function (o) { document.querySelectorAll('[name="quantity[' + o[0] + ']"]').forEach(function (inp) { if (o[1] === 0) inp.remove(); else inp.value = o[1]; }); }); }); })
-      .catch(function () {})
+    freshCart().then(function (items) { return runOps(planFix(items)); }).catch(function () {})
       .then(function () { fixing = false; b.dataset.kmdOk = 1; b.click(); });
   }, true);
   function kit(n) {
