@@ -549,7 +549,9 @@
       '<details><summary>¿Cómo consigo mi GPX?</summary><b>Strava</b> (desde la compu): abrí tu actividad → menú <b>⋯</b> → <b>Exportar GPX</b>.<br><b>Garmin Connect</b>: abrí tu actividad → <b>⚙</b> → <b>Exportar a GPX</b>.<br>En el celular es más fácil mandarnos el link de la actividad.</details>' +
       '<span class="kmd-c-l">Link de tu actividad <span>· opcional (Strava, Garmin)</span></span><input type="text" class="kmd-c-lk" maxlength="200" placeholder="https://www.strava.com/activities/...">' +
       '<div class="kmd-c-e"></div>';
-    var anchorEl = form.querySelector('.js-product-quantity') ? form.querySelector('.js-product-quantity').closest('.form-group') || form.querySelector('.js-product-quantity') : btn;
+    var qEl = form.querySelector('.js-product-quantity');
+    var anchorEl = (qEl && (qEl.closest('.product-quantity') || qEl.closest('.row') || qEl.closest('.form-group'))) || btn;
+    if (!anchorEl.parentNode || !form.contains(anchorEl)) anchorEl = btn;
     anchorEl.parentNode.insertBefore(box, anchorEl);
     var varWrap = form.querySelector('.js-product-variants'); if (varWrap && sel) varWrap.classList.add('kmd-hide');
     var title = box.querySelector('.kmd-c-ti'), link = box.querySelector('.kmd-c-lk'), file = box.querySelector('input[type=file]'), fbox = box.querySelector('.kmd-c-f'), err = box.querySelector('.kmd-c-e'), wrap = box.querySelector('.kmd-c-fields');
