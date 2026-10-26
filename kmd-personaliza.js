@@ -31,24 +31,47 @@
   function fmt(v) { var d = String(v).replace(/\D/g, '').replace(/^0+/, '').slice(0, 6), o = ''; while (d.length > 2) { o = ':' + d.slice(-2) + o; d = d.slice(0, -2); } return d + o; }
   function valid(v) { return /^\d{1,2}(:\d\d){1,2}$/.test(v); }
   function css(t) { var s = document.createElement('style'); s.textContent = t; document.head.appendChild(s); }
+  /* receptor de pedidos personalizados (Google Apps Script) */
+  var APP = 'https://script.google.com/macros/s/AKfycbx5v2BaDzGw4DlqjYPOFgckIC9eNB7LScU4Eu_fk10hcAcJ5zL7wSEjewerLAsQXjr-/exec', APP_KEY = 'kmd-2026-gpx', CKEY = 'kmd_custom_v1', CUSTOM_ID = 371969427;
+  function api(o) {
+    o.key = APP_KEY;
+    return fetch(APP, { method: 'POST', body: JSON.stringify(o), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: !o.data })
+      .then(function (r) { return r.json(); });
+  }
+  function cget() { try { return JSON.parse(localStorage.getItem(CKEY) || '[]'); } catch (e) { return []; } }
+  function cset(v) { try { localStorage.setItem(CKEY, JSON.stringify(v)); } catch (e) {} }
+  function esc(t) { return String(t || '').replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
 
   /* ---------- Página de confirmación (checkout) ---------- */
   if (/\/checkout\//.test(location.pathname) && !SUCCESS) return;
   if (SUCCESS) {
     var list = ls(1).filter(function (r) { return !r.sent && Date.now() - r.ts < 7 * 864e5; });
-    if (!list.length) return;
+    var clist = cget().filter(function (r) { return !r.sent && Date.now() - r.ts < 7 * 864e5; });
+    if (!list.length && !clist.length) return;
     var tries = 0;
     (function wait() {
       var txt = document.body ? document.body.innerText : '';
       var m = txt.match(/(?:orden|pedido|compra)[^#\d]{0,25}#?\s?(\d{2,8})/i) || txt.match(/#(\d{2,8})/);
       var num = (window.LS && LS.order && (LS.order.number || LS.order.id)) || (m && m[1]);
       if (!num && tries++ < 6) return setTimeout(wait, 500);
-      var lines = list.map(function (r) { return r.name + ' → ' + r.times; }).join('\n');
-      post('✅ COMPRA CONFIRMADA\nPedido: #' + (num || '¿?') + '\nURL: ' + location.href.split('?')[0] + '\n' + lines + '\n(Chequeá en el pedido que la variante diga "Con mis tiempos")');
-      ls(0, ls(1).map(function (r) { r.sent = 1; return r; }));
+      var html = '';
+      if (list.length) {
+        var lines = list.map(function (r) { return r.name + ' → ' + r.times; }).join('\n');
+        post('✅ COMPRA CONFIRMADA\nPedido: #' + (num || '¿?') + '\nURL: ' + location.href.split('?')[0] + '\n' + lines + '\n(Chequeá en el pedido que la variante diga "Con mis tiempos")');
+        ls(0, ls(1).map(function (r) { r.sent = 1; return r; }));
+        html += '<b>¡Recibimos tus tiempos!</b><br>' + list.map(function (r) { return r.name + ': <b>' + r.times + '</b>'; }).join('<br>') + '<br><span style="font-size:12px">Los vamos a imprimir tal cual. Si algo está mal, respondé el mail de tu compra.</span>';
+      }
+      if (clist.length) {
+        var items = clist.map(function (r) { return { race: r.race, text: r.text || ('Carrera: ' + r.race), gpx: r.gpx || '' }; });
+        api({ type: 'order', order: num || '', items: items });
+        post('🗺️ CUADRO PERSONALIZADO · COMPRA CONFIRMADA\nPedido: #' + (num || '¿?') + '\n' + items.map(function (i) { return i.text; }).join('\n\n'));
+        cset(cget().map(function (r) { r.sent = 1; return r; }));
+        html += (html ? '<br><br>' : '') + '<b>¡Recibimos los datos de tu cuadro!</b><br>' + items.map(function (i) { return 'Cuadro: <b>' + esc(i.race) + '</b><br>Archivo GPX: <b>' + (i.gpx ? 'recibido' : 'pendiente') + '</b>'; }).join('<br><br>') +
+          '<br><span style="font-size:12px">' + (items.some(function (i) { return !i.gpx; }) ? 'Si todavía no nos mandaste el .gpx (Strava o Garmin), respondé el mail de tu compra con el archivo. ' : '') + 'Te vamos a mandar el diseño para que lo apruebes antes de producir.</span>';
+      }
       var box = document.createElement('div');
       box.style.cssText = 'margin:16px auto;max-width:560px;padding:14px 16px;border-radius:10px;background:#fff7ed;border:1px solid #fb923c;color:#7c2d12;font:500 14px/1.45 Poppins,Arial,sans-serif';
-      box.innerHTML = '<b>¡Recibimos tus tiempos!</b><br>' + list.map(function (r) { return r.name + ': <b>' + r.times + '</b>'; }).join('<br>') + '<br><span style="font-size:12px">Los vamos a imprimir tal cual. Si algo está mal, respondé el mail de tu compra.</span>';
+      box.innerHTML = html;
       var host = document.querySelector('main') || document.body; host.insertBefore(box, host.firstChild);
     })();
     return;
@@ -470,6 +493,160 @@
     document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-store^="product-form-"] .js-addtocart, [data-store^="product-form-"] [type=submit]')) onAdd(e); }, true);
   }
 
-  function start() { boot(0); kit(0); }
+  /* ---------- Cuadro personalizado: 3 tipos + datos + GPX + vista previa ---------- */
+  var CP = {
+    carrera: { label: 'Carrera', sub: 'Portamedallas + 1 mapa', img: CDN + 'cp_carrera.jpg', r: 1300 / 919, opt: /carrera/i,
+      fields: [{ k: 'name', l: 'Tu nombre', ph: 'Ej.: Juan Pérez', opt: 1, txt: 1 }, { k: 'tt', l: 'Tiempo final', ph: '3:27:50', time: 1 }],
+      ov: [{ k: 'title', x: 50, y: 60.4, s: 3.4, w: 800, up: 1, max: 82, d: 'TU CARRERA' }, { k: 'name', x: 50, y: 66.6, s: 2.3, w: 500, d: '' },
+           { k: 'tt', x: 84.6, y: 85.2, s: 2.7, w: 700, d: '' },
+           { x: 15.4, y: 85.4, s: 2.1, w: 700, fix: '-- KM', ph: 1 }, { x: 32.7, y: 85.4, s: 2.1, w: 700, fix: 'Tu ciudad', ph: 1 },
+           { x: 50, y: 85.4, s: 2.1, w: 700, fix: 'Fecha', ph: 1 }, { x: 67.4, y: 85.4, s: 2.1, w: 700, fix: '-- m', ph: 1 }] },
+    triatlon: { label: 'Triatlón', sub: 'Portamedallas + 3 mapas', img: CDN + 'cp_triatlon.jpg', r: 1300 / 919, opt: /triatl/i, files: 3,
+      fields: [{ k: 'name', l: 'Tu nombre', ph: 'Ej.: Juan Pérez', opt: 1, txt: 1 }, { k: 'sw', l: 'Natación', ph: '49:21', time: 1 }, { k: 'bk', l: 'Bici', ph: '3:10:02', time: 1 },
+               { k: 'rn', l: 'Carrera', ph: '1:51:21', time: 1 }, { k: 'tt', l: 'Tiempo final', ph: '5:59:04', time: 1 }],
+      ov: [{ k: 'title', x: 9.1, y: 9.5, s: 4.4, w: 800, up: 1, left: 1, wrap: 36, d: 'TU TRIATLÓN' }, { k: 'name', x: 9.3, y: 19.6, s: 2.1, w: 500, left: 1, after: 1, d: '' },
+           { k: 'sw', x: 78.4, y: 18.6, s: 3.2, w: 800, left: 1, d: '' }, { k: 'bk', x: 78.4, y: 47.7, s: 3.2, w: 800, left: 1, d: '' },
+           { k: 'rn', x: 78.4, y: 76.8, s: 3.2, w: 800, left: 1, d: '' }, { k: 'tt', x: 42.2, y: 88.3, s: 1.8, w: 800, d: '' },
+           { x: 9.4, y: 88.6, s: 1.6, w: 700, fix: '-- KM', ph: 1 }, { x: 21.3, y: 88.6, s: 1.6, w: 700, fix: 'Tu ciudad', ph: 1 }, { x: 31.6, y: 88.6, s: 1.6, w: 700, fix: 'Fecha', ph: 1 }] },
+    recorrido: { label: 'Recorrido', sub: 'Sin medallero · viaje, trekking, paseo', img: CDN + 'cp_recorrido.jpg', r: 919 / 1300, opt: /recorrido/i,
+      fields: [{ k: 'name', l: 'Nombre', ph: 'Ej.: Juan y Sofi', opt: 1, txt: 1 }],
+      ov: [{ k: 'title', x: 50, y: 75.5, s: 5.2, w: 800, up: 1, max: 80, d: 'TU RECORRIDO' }, { k: 'name', x: 50, y: 82.6, s: 3.0, w: 600, d: '' },
+           { x: 25, y: 88.5, s: 3.0, w: 700, fix: '-- KM', ph: 1 }, { x: 50, y: 88.5, s: 3.0, w: 700, fix: 'Lugar', ph: 1 }, { x: 75, y: 88.5, s: 3.0, w: 700, fix: 'Fecha', ph: 1 },
+           { x: 50, y: 40, s: 3.4, w: 600, fix: 'Diseño en desarrollo', ph: 1 }] }
+  };
+  function custom(n) {
+    if (!(window.LS && LS.product && LS.product.id === CUSTOM_ID)) return;
+    var form = document.querySelector('[data-store="product-form-' + CUSTOM_ID + '"]') || document.querySelector('.js-product-form');
+    var btn = form && form.querySelector('[data-store="product-buy-button"], .js-addtocart[type=submit], [type=submit]');
+    var slider = document.querySelector('.product-slider-container');
+    if (!btn || !slider) { if ((n || 0) < 40) setTimeout(function () { custom((n || 0) + 1); }, 250); return; }
+    var fl0 = document.createElement('link'); fl0.rel = 'stylesheet'; fl0.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap'; document.head.appendChild(fl0);
+    Object.keys(CP).forEach(function (k) { new Image().src = CP[k].img; });
+    var sel = form.querySelector('select[name="variation[0]"]');
+    css('.kmd-hide{display:none!important}.kmd-c{margin:4px 0 16px}.kmd-c-l{display:block;font-size:13px;font-weight:600;color:#fff;margin:14px 0 6px}.kmd-c-l span{font-weight:400;color:#94a3b8;font-size:12px}' +
+      '.kmd-c-t{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.kmd-c-t button{text-align:left;border:1px solid #2a3340;border-radius:12px;padding:11px 12px;background:#12161d;color:#e5e7eb;cursor:pointer;font-family:inherit}' +
+      '.kmd-c-t b{display:block;color:#fff;font-size:14px}.kmd-c-t span{font-size:11px;color:#94a3b8;line-height:1.3;display:block;margin-top:2px}.kmd-c-t button.on{border-color:#fb923c;background:#1b1610}.kmd-c-t button.on span{color:#fdba74}' +
+      '@media(max-width:480px){.kmd-c-t{grid-template-columns:1fr}}' +
+      '.kmd-c-g{display:grid;grid-template-columns:1fr 1fr;gap:10px}.kmd-c-g .full{grid-column:1/-1}' +
+      '.kmd-c input[type=text]{width:100%;box-sizing:border-box;background:#0f1218;border:1px solid #2a3340;color:#fff;border-radius:10px;padding:11px 12px;font:500 15px Poppins,sans-serif}' +
+      '.kmd-c input.tm{font:600 17px Poppins,sans-serif;letter-spacing:.05em}.kmd-c input[type=text]:focus{outline:none;border-color:#fb923c}.kmd-c input.err{border-color:#ef4444}.kmd-c input:disabled{opacity:.4}' +
+      '.kmd-c-s{font-size:12px;color:#94a3b8;margin-bottom:4px;display:block}.kmd-c-ck{display:flex;align-items:center;gap:8px;font-size:13px;color:#cbd5e1;margin-top:10px;cursor:pointer}.kmd-c-ck input{accent-color:#fb923c;width:16px;height:16px}' +
+      '.kmd-c-f{display:flex;align-items:center;gap:10px;border:1px dashed #2a3340;border-radius:10px;padding:12px;background:#12161d;cursor:pointer;color:#cbd5e1;font-size:13px}.kmd-c-f.on{border-color:#fb923c;background:#1b1610;color:#fdba74}.kmd-c-f input{display:none}' +
+      '.kmd-c-h{font-size:12px;color:#94a3b8;margin-top:8px;line-height:1.45}.kmd-c-h b{color:#e5e7eb}.kmd-c details{margin-top:8px;font-size:12px;color:#94a3b8;line-height:1.5}.kmd-c summary{cursor:pointer;color:#fb923c;font-weight:600}' +
+      '.kmd-c-e{color:#f87171;font-size:13px;margin-top:10px;display:none}' +
+      '.product-slider-container{position:relative}.kmd-cp{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#f4f2ee,#dcd8d1)}' +
+      '.kmd-cp-fr{background:#1a1a1a;padding:3%;border-radius:3px;box-shadow:0 18px 36px rgba(0,0,0,.45),inset 0 0 0 2px #2b2b2b}.kmd-cp-pic{container-type:inline-size;position:relative;background:#fff}.kmd-cp-pic img{width:100%;display:block}' +
+      '.kmd-cp-o{position:absolute;font-family:Inter,sans-serif;color:#0a0f18;line-height:1.15;white-space:nowrap;transform:translateX(-50%)}.kmd-cp-o.left{transform:none}.kmd-cp-o.ph{opacity:.3}' +
+      '.kmd-cp-b{position:absolute;left:12px;top:12px;background:#fb923c;color:#111;font:600 11px Poppins,sans-serif;padding:4px 8px;border-radius:6px;letter-spacing:.04em}');
+    var box = document.createElement('div'); box.className = 'kmd-c';
+    box.innerHTML = '<span class="kmd-c-l">Elegí tu cuadro</span><div class="kmd-c-t">' +
+      Object.keys(CP).map(function (k) { return '<button type="button" data-t="' + k + '"><b>' + CP[k].label + '</b><span>' + CP[k].sub + '</span></button>'; }).join('') + '</div>' +
+      '<span class="kmd-c-l">Título del cuadro</span><input type="text" class="kmd-c-ti" maxlength="60" placeholder="Ej.: Maratón de Buenos Aires 2026">' +
+      '<div class="kmd-c-fields"></div>' +
+      '<span class="kmd-c-l">Tu recorrido (.gpx) <span>· opcional</span></span>' +
+      '<label class="kmd-c-f"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fb923c"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg><span class="kmd-c-fn">Subir archivo .gpx</span><input type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml"></label>' +
+      '<div class="kmd-c-h">Con tu GPX dibujamos <b>el recorrido exacto</b> de tu mapa. Si no lo tenés, comprá igual: pegá abajo el link de tu actividad o te lo pedimos por mail.</div>' +
+      '<details><summary>¿Cómo consigo mi GPX?</summary><b>Strava</b> (desde la compu): abrí tu actividad → menú <b>⋯</b> → <b>Exportar GPX</b>.<br><b>Garmin Connect</b>: abrí tu actividad → <b>⚙</b> → <b>Exportar a GPX</b>.<br>En el celular es más fácil mandarnos el link de la actividad.</details>' +
+      '<span class="kmd-c-l">Link de tu actividad <span>· opcional (Strava, Garmin)</span></span><input type="text" class="kmd-c-lk" maxlength="200" placeholder="https://www.strava.com/activities/...">' +
+      '<div class="kmd-c-e"></div>';
+    var anchorEl = form.querySelector('.js-product-quantity') ? form.querySelector('.js-product-quantity').closest('.form-group') || form.querySelector('.js-product-quantity') : btn;
+    anchorEl.parentNode.insertBefore(box, anchorEl);
+    var varWrap = form.querySelector('.js-product-variants'); if (varWrap && sel) varWrap.classList.add('kmd-hide');
+    var title = box.querySelector('.kmd-c-ti'), link = box.querySelector('.kmd-c-lk'), file = box.querySelector('input[type=file]'), fbox = box.querySelector('.kmd-c-f'), err = box.querySelector('.kmd-c-e'), wrap = box.querySelector('.kmd-c-fields');
+    var type = 'carrera', vals = {}, noTime = false;
+    /* vista previa */
+    var prev = document.createElement('div'); prev.className = 'kmd-cp';
+    prev.innerHTML = '<span class="kmd-cp-b">VISTA PREVIA · APROXIMADA</span><div class="kmd-cp-fr"><div class="kmd-cp-pic"><img alt="Vista previa de tu cuadro"></div></div>';
+    slider.appendChild(prev);
+    var pic = prev.querySelector('.kmd-cp-pic'), fr = prev.querySelector('.kmd-cp-fr'), ovEls = [];
+    function fit() {
+      var c = CP[type], sw = slider.clientWidth, sh = slider.clientHeight || sw, r = c.r;
+      var w = Math.min(sw * 0.9, sh * 0.88 * r); fr.style.width = Math.round(w) + 'px';
+      ovEls.forEach(function (e) { if (e._o.wrap) { e.style.fontSize = e._o.s + 'cqw'; var k2 = 0; while (e.offsetHeight > pic.clientHeight * 0.16 && k2++ < 30) e.style.fontSize = (parseFloat(e.style.fontSize) * 0.93) + 'cqw'; }
+        if (e._o.after) { var t0 = ovEls[0]; e.style.top = ((t0.offsetTop + t0.offsetHeight) / pic.clientHeight * 100 + 1.8) + '%'; }
+        if (e._o.max) { e.style.fontSize = e._o.s + 'cqw'; var maxW = pic.clientWidth * e._o.max / 100, k = 0; while (e.offsetWidth > maxW && k++ < 30) e.style.fontSize = (parseFloat(e.style.fontSize) * 0.93) + 'cqw'; } });
+    }
+    function paint() {
+      var c = CP[type];
+      ovEls.forEach(function (e) {
+        var o = e._o, v = o.fix || (o.k === 'title' ? title.value.trim() : (vals[o.k] || ''));
+        if (o.time && noTime) v = '';
+        if (o.k && !o.fix && CP[type].fields.some(function (f) { return f.k === o.k && f.time; }) && noTime) v = '';
+        var show = v || (o.k && !o.fix ? (o.d || '') : '');
+        e.textContent = o.up ? show.toUpperCase() : show; e.classList.toggle('ph', !!o.ph || !v);
+      });
+      fit();
+    }
+    function build() {
+      var c = CP[type]; prev.querySelector('img').src = c.img;
+      ovEls.forEach(function (e) { e.remove(); }); ovEls = c.ov.map(function (o) {
+        var e = document.createElement('div'); e.className = 'kmd-cp-o' + (o.left ? ' left' : ''); e._o = o;
+        e.style.cssText = 'left:' + o.x + '%;top:' + o.y + '%;font-size:' + o.s + 'cqw;font-weight:' + o.w + (o.wrap ? ';white-space:normal;width:' + o.wrap + '%;line-height:1.05' : ''); pic.appendChild(e); return e; });
+      var hasTime = c.fields.some(function (f) { return f.time; });
+      wrap.innerHTML = '<div class="kmd-c-g">' + c.fields.map(function (f) {
+        return '<div class="' + (f.txt ? 'full' : '') + '"><span class="kmd-c-l" style="margin-top:12px">' + f.l + (f.opt ? ' <span>· opcional</span>' : '') + '</span>' +
+          '<input type="text" data-k="' + f.k + '" ' + (f.time ? 'inputmode="numeric" class="tm" ' : '') + 'maxlength="' + (f.time ? 9 : 40) + '" placeholder="' + f.ph + '" value="' + esc(vals[f.k] || '') + '"></div>'; }).join('') + '</div>' +
+        (hasTime ? '<label class="kmd-c-ck"><input type="checkbox"' + (noTime ? ' checked' : '') + '> Prefiero sin ' + (type === 'triatlon' ? 'tiempos' : 'tiempo') + '</label>' : '');
+      wrap.querySelectorAll('input[data-k]').forEach(function (i) {
+        var f = c.fields.filter(function (x) { return x.k === i.dataset.k; })[0]; i.disabled = !!(f.time && noTime);
+        i.addEventListener('input', function () { if (f.time) i.value = fmt(i.value); vals[f.k] = i.value; i.classList.remove('err'); showErr(''); paint(); });
+      });
+      var ck = wrap.querySelector('.kmd-c-ck input');
+      if (ck) ck.addEventListener('change', function () { noTime = ck.checked; wrap.querySelectorAll('input.tm').forEach(function (i) { i.disabled = noTime; i.classList.remove('err'); }); showErr(''); paint(); });
+      file.multiple = !!c.files; box.querySelector('.kmd-c-fn').textContent = c.files ? 'Subir archivos .gpx (hasta 3: natación, bici, carrera)' : 'Subir archivo .gpx';
+      if (file.files.length) setFiles();
+      box.querySelectorAll('.kmd-c-t button').forEach(function (b) { b.classList.toggle('on', b.dataset.t === type); });
+      title.placeholder = type === 'triatlon' ? 'Ej.: IRONMAN 70.3 Buenos Aires' : type === 'recorrido' ? 'Ej.: Camino de Santiago' : 'Ej.: Maratón de Buenos Aires 2026';
+      if (sel) { var o = [].filter.call(sel.options, function (x) { return c.opt.test(x.value) || c.opt.test(x.text); })[0]; if (o && sel.value !== o.value) { sel.value = o.value; sel.dispatchEvent(new Event('change', { bubbles: true })); } }
+      paint();
+    }
+    function showErr(t) { err.textContent = t; err.style.display = t ? 'block' : 'none'; }
+    function setFiles() {
+      var fs = [].slice.call(file.files, 0, CP[type].files || 1), big = fs.some(function (f) { return f.size > 15 * 1024 * 1024; });
+      if (big) { showErr('Algún archivo es muy grande (máx. 15 MB). Podés comprar igual y mandárnoslo después.'); file.value = ''; fs = []; }
+      fbox.classList.toggle('on', !!fs.length);
+      box.querySelector('.kmd-c-fn').textContent = fs.length ? fs.map(function (f) { return f.name; }).join(', ') : (CP[type].files ? 'Subir archivos .gpx (hasta 3: natación, bici, carrera)' : 'Subir archivo .gpx');
+    }
+    box.querySelector('.kmd-c-t').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b && b.dataset.t !== type) { type = b.dataset.t; Object.keys(vals).forEach(function (k) { if (k !== 'name') delete vals[k]; }); build(); } });
+    title.addEventListener('input', function () { title.classList.remove('err'); showErr(''); paint(); });
+    file.addEventListener('change', setFiles);
+    window.addEventListener('resize', fit);
+    build(); setTimeout(fit, 300);
+    function upload(f) {
+      return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(String(r.result).split(',')[1]); }; r.onerror = rej; r.readAsDataURL(f); })
+        .then(function (b64) { return api({ type: 'gpx', name: f.name, data: b64 }); }).then(function (r) { return r && r.ok ? r.url : ''; }).catch(function () { return ''; });
+    }
+    function summary(gpx) {
+      var c = CP[type], L = ['Tipo: ' + c.label, 'Título: ' + title.value.trim()];
+      c.fields.forEach(function (f) { if (f.time) { if (!noTime) L.push(f.l + ': ' + (vals[f.k] || '-')); } else if (vals[f.k]) L.push(f.l + ': ' + vals[f.k]); });
+      if (noTime && c.fields.some(function (f) { return f.time; })) L.push('Tiempos: sin tiempo');
+      if (link.value.trim()) L.push('Link actividad: ' + link.value.trim());
+      L.push('GPX: ' + (gpx.length ? gpx.join(' , ') : 'no lo subió'));
+      return L.join('\n');
+    }
+    var busy = false, ok = false;
+    function go(e) {
+      if (ok) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (!title.value.trim()) { title.classList.add('err'); title.focus(); showErr('Escribí el título de tu cuadro (ej.: el nombre de la carrera).'); return; }
+      var c = CP[type], bad = c.fields.filter(function (f) { return f.time && !noTime && !valid(vals[f.k] || ''); });
+      if (bad.length) { wrap.querySelectorAll('input.tm').forEach(function (i) { if (!valid(vals[i.dataset.k] || '')) i.classList.add('err'); }); showErr('Completá ' + (bad.length > 1 ? 'tus tiempos' : 'tu tiempo') + ' (solo números) o tildá "Prefiero sin ' + (type === 'triatlon' ? 'tiempos' : 'tiempo') + '".'); return; }
+      if (busy) return; busy = true;
+      var fs = [].slice.call(file.files, 0, c.files || 1), txt = btn.value;
+      function done(gpx) {
+        var text = summary(gpx), l = cget().filter(function (r) { return !r.sent && Date.now() - r.ts < 7 * 864e5; });
+        l.push({ race: title.value.trim(), text: text, gpx: gpx.join(' , '), ts: Date.now() }); cset(l);
+        post('🗺️ CUADRO PERSONALIZADO AL CARRITO\n' + text + '\n' + new Date().toLocaleString('es-AR'));
+        ok = true; busy = false; btn.value = txt; btn.disabled = false; btn.click(); setTimeout(function () { ok = false; }, 1500);
+      }
+      if (!fs.length) return done([]);
+      btn.value = 'SUBIENDO TU RECORRIDO...'; btn.disabled = true;
+      Promise.all(fs.map(upload)).then(function (urls) { done(urls.filter(Boolean)); if (urls.some(function (u) { return !u; })) post('⚠️ Algún GPX no se pudo subir'); });
+    }
+    form.addEventListener('submit', go, true);
+    document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-store^="product-form-"] .js-addtocart, [data-store^="product-form-"] [type=submit]')) go(e); }, true);
+  }
+
+  function start() { boot(0); kit(0); custom(0); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
