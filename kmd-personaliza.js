@@ -230,7 +230,7 @@
       '.kmd-up-pr{font-size:20px;font-weight:700;color:#fb923c}.kmd-up-pr s{font-size:13px;color:#64748b;font-weight:500;margin-left:6px}' +
       '.kmd-up-env{display:inline-block;margin-top:6px;background:#1b1610;border:1px dashed #fb923c;color:#fdba74;font-size:12px;padding:4px 8px;border-radius:8px}' +
       '.kmd-up-l{font-size:13px;font-weight:600;color:#fff;margin:14px 0 8px}' +
-      '.kmd-up-g{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}' +
+      '.kmd-up-g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}' +
       '.kmd-up-g div{position:relative;border:1px solid #2a3340;background:#12161d;border-radius:10px;padding:10px 2px;text-align:center;font:700 12px Poppins,sans-serif;color:#fff;cursor:pointer;line-height:1.15}' +
       '.kmd-up-g div span{display:block;font-size:9px;font-weight:500;color:#94a3b8;margin-top:2px}.kmd-up-g div.on{border-color:#fb923c;background:#1b1610}' +
       '.kmd-up-g div.on:after{content:"\\2713";position:absolute;top:2px;right:5px;font-size:10px;color:#fb923c}' +
@@ -280,7 +280,8 @@
   /* ---------- Kit MIS RÉCORDS: distancias a elección ---------- */
   var KIT_ID = 371553865, ADDON_ID = 373656430, FREE_MIN = 79999;
   var DIST = [['5K','','5k','5K'],['10K','','10k','10K'],['15K','','15k','15K'],['21K','','21k','21K'],['Media','maratón','media','Media maratón'],
-              ['30K','','30k','30K'],['42K','','42k','42K'],['Maratón','','maraton','Maratón'],['IRONMAN','70.3','ironman703','IRONMAN 70.3'],['IRONMAN','','ironman','IRONMAN']];
+              ['30K','','30k','30K'],['42K','','42k','42K'],['Maratón','','maraton','Maratón'],['IRONMAN','70.3','ironman703','IRONMAN 70.3'],['IRONMAN','','ironman','IRONMAN'],
+              ['HYROX','','hyrox','HYROX'],['HYBRID','RACE','hybridrace','HYBRID RACE']];
   /* ocultar las líneas de $0 en carrito y carrito lateral (en toda la tienda) */
   css('[data-store="cart-item-' + ADDON_ID + '"]{display:none!important}');
   /* ---- carrito: helpers ----
@@ -393,7 +394,7 @@
     if (!sel || !anchor) { if ((n || 0) < 40) setTimeout(function () { kit((n || 0) + 1); }, 250); return; }
     css('.kmd-hide{display:none!important}' +
       '.kmd-k-lbl{font-size:13px;color:#e5e7eb;font-weight:600;margin:18px 0 2px}.kmd-k-sub{font-size:12px;color:#94a3b8;margin:0 0 10px}' +
-      '.kmd-k-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}@media(max-width:420px){.kmd-k-grid{gap:6px}}' +
+      '.kmd-k-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media(max-width:420px){.kmd-k-grid{gap:6px}}' +
       '.kmd-k-chip{position:relative;border:1px solid #2a3340;background:#12161d;border-radius:10px;padding:11px 2px;text-align:center;font:700 13px Poppins,sans-serif;color:#fff;cursor:pointer;line-height:1.15;transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent}' +
       '.kmd-k-chip span{display:block;font-size:10px;font-weight:500;color:#94a3b8;margin-top:2px}' +
       '.kmd-k-chip.on{border-color:#fb923c;background:#1b1610}.kmd-k-chip.on span{color:#fdba74}.kmd-k-chip.on:after{content:"\\2713";position:absolute;top:3px;right:6px;font-size:11px;color:#fb923c}' +
