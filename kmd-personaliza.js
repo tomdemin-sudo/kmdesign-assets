@@ -913,7 +913,7 @@
   function rvCss() {
     if (document.getElementById('kmd-rv-css')) return;
     var s = document.createElement('style'); s.id = 'kmd-rv-css';
-    s.textContent = '.kmd-rv{max-width:520px;margin:10px auto 40px;padding:0 16px;font-family:inherit;color:#111}' +
+    s.textContent = '.kmd-rv{max-width:520px;width:calc(100% - 24px);margin:16px auto 40px;padding:22px 18px;background:#fff;border-radius:18px;box-sizing:border-box;font-family:inherit;color:#111;text-align:left}.kmd-rv input[type=file]{display:none!important}' +
       '.kmd-rv h2{font-size:24px;margin:8px 0 6px;line-height:1.25}.kmd-rv .sub{color:#555;font-size:14.5px;margin:0 0 16px}' +
       '.kmd-rv .it{border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin:0 0 14px;background:#fff}' +
       '.kmd-rv .it img{width:72px;height:72px;object-fit:cover;border-radius:10px;float:right;margin:0 0 6px 10px}' +
@@ -956,7 +956,7 @@
     var h1 = document.querySelector('h1'), host = (h1 && h1.parentNode) || document.querySelector('main') || document.body;
     if (h1) { [].forEach.call(host.children, function (ch) { ch.style.display = 'none'; }); }
     host.insertBefore(box, h1 ? host.firstChild : host.firstChild);
-    box.innerHTML = '<p class="sub">Cargando…</p>';
+    box.innerHTML = (q.p && q.r) ? '<h2>¡Gracias por tu voto!</h2><div class="st">' + [1, 2, 3, 4, 5].map(function (n) { return '<span class="' + (n <= Number(q.r) ? 'on' : '') + '">★</span>'; }).join('') + '</div><div class="ok">✓ Tu calificación ya quedó guardada</div><p class="sub">Cargando…</p>' : '<p class="sub">Cargando…</p>';
     if (!q.o || !q.t) { box.innerHTML = '<h2>¡Hola!</h2><p class="sub">Para dejar tu opinión, entrá desde el link del mail que te mandamos.</p>'; return; }
     var base = { o: q.o, t: q.t };
     if (q.baja) {
