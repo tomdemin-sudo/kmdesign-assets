@@ -950,7 +950,7 @@
   }
   function rvPage() {
     if (!/^\/tu-opinion\/?$/.test(location.pathname) || document.getElementById('kmd-rv')) return;
-    rvCss();
+    rvCss(); try { document.title = 'Tu opinión · KM Design'; } catch (e) {}
     var q = {}; location.search.replace(/^\?/, '').split('&').forEach(function (kv) { var p = kv.split('='); if (p[0]) q[decodeURIComponent(p[0])] = decodeURIComponent((p[1] || '').replace(/\+/g, ' ')); });
     var box = document.createElement('div'); box.id = 'kmd-rv'; box.className = 'kmd-rv';
     var h1 = document.querySelector('h1'), host = (h1 && h1.parentNode) || document.querySelector('main') || document.body;
