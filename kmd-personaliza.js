@@ -913,7 +913,7 @@
   function rvCss() {
     if (document.getElementById('kmd-rv-css')) return;
     var s = document.createElement('style'); s.id = 'kmd-rv-css';
-    s.textContent = '.kmd-rv{max-width:520px;width:calc(100% - 24px);margin:16px auto 40px;padding:22px 18px;background:#fff;border-radius:18px;box-sizing:border-box;font-family:inherit;color:#111;text-align:left}.kmd-rv input[type=file]{display:none!important}.kmd-rv textarea{background:#fff!important;color:#111!important}.kmd-rv h2,.kmd-rv .nm,.kmd-rv b{color:#111}' +
+    s.textContent = '.kmd-rv{max-width:520px;width:calc(100% - 24px);margin:16px auto 40px;padding:22px 18px;background:#fff;border-radius:18px;box-sizing:border-box;font-family:inherit;color:#111;text-align:left}.kmd-rv input[type=file]{display:none!important}.kmd-rv textarea{background:#fff!important;color:#111!important}.kmd-rv,.kmd-rv h2,.kmd-rv p,.kmd-rv label,.kmd-rv .nm,.kmd-rv b{color:#111!important}.kmd-rv .sub,.kmd-rv .lg,.kmd-rv small{color:#555!important}.kmd-rv label.b,.kmd-rv .b{color:#fff!important}.kmd-rv .ok{color:#047857!important}.kmd-rv .err{color:#b91c1c!important}' +
       '.kmd-rv h2{font-size:24px;margin:8px 0 6px;line-height:1.25}.kmd-rv .sub{color:#555;font-size:14.5px;margin:0 0 16px}' +
       '.kmd-rv .it{border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin:0 0 14px;background:#fff}' +
       '.kmd-rv .it img{width:72px;height:72px;object-fit:cover;border-radius:10px;float:right;margin:0 0 6px 10px}' +
