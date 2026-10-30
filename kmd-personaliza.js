@@ -909,6 +909,140 @@
     document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-store^="product-form-"] .js-addtocart, [data-store^="product-form-"] [type=submit]')) go(e); }, true);
   }
 
-  function start() { boot(0); kit(0); custom(0); }
+  /* ---------- Reseñas: página /tu-opinion y opiniones en los productos ---------- */
+  function rvCss() {
+    if (document.getElementById('kmd-rv-css')) return;
+    var s = document.createElement('style'); s.id = 'kmd-rv-css';
+    s.textContent = '.kmd-rv{max-width:520px;margin:10px auto 40px;padding:0 16px;font-family:inherit;color:#111}' +
+      '.kmd-rv h2{font-size:24px;margin:8px 0 6px;line-height:1.25}.kmd-rv .sub{color:#555;font-size:14.5px;margin:0 0 16px}' +
+      '.kmd-rv .it{border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin:0 0 14px;background:#fff}' +
+      '.kmd-rv .it img{width:72px;height:72px;object-fit:cover;border-radius:10px;float:right;margin:0 0 6px 10px}' +
+      '.kmd-rv .nm{font-weight:600;font-size:15px;margin:0 0 4px}' +
+      '.kmd-rv .st{display:flex;gap:2px;margin:4px 0 2px;clear:none}.kmd-rv .st span{font-size:38px;line-height:1;color:#d1d5db;cursor:pointer;user-select:none}.kmd-rv .st span.on{color:#ff9a3c}' +
+      '.kmd-rv .ok{display:inline-block;background:#ecfdf5;color:#047857;font-size:12.5px;padding:4px 10px;border-radius:999px;margin:4px 0 8px}' +
+      '.kmd-rv label.l{display:block;font-size:14px;font-weight:600;margin:8px 0 6px;clear:both}.kmd-rv label.l small{font-weight:400;color:#6b7280}' +
+      '.kmd-rv textarea{width:100%;min-height:90px;border:1px solid #d1d5db;border-radius:12px;padding:10px 12px;font:inherit;font-size:15px;box-sizing:border-box}' +
+      '.kmd-rv .ph{border:1.5px dashed #cbd5e1;border-radius:14px;padding:16px;text-align:center;margin:4px 0 16px}.kmd-rv .ph p{margin:0 0 10px;font-size:14.5px}' +
+      '.kmd-rv .ph img{max-width:100%;border-radius:10px;margin-top:10px}' +
+      '.kmd-rv .b{display:inline-block;border:0;border-radius:999px;padding:14px 24px;font:inherit;font-weight:600;font-size:15.5px;cursor:pointer;background:#0b0d11;color:#fff;text-decoration:none}' +
+      '.kmd-rv .b.or{background:#f26a1d}.kmd-rv .b.full{width:100%}.kmd-rv .b[disabled]{opacity:.6}' +
+      '.kmd-rv .lg{font-size:12px;color:#6b7280;margin:12px 0 0;line-height:1.5}.kmd-rv .err{color:#b91c1c;font-size:14px;margin:8px 0}' +
+      '.kmd-rv .thx{text-align:center;padding:30px 6px}.kmd-rv .thx .ic{font-size:52px}' +
+      '.kmd-rvs{font-size:15px;margin:6px 0 10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}.kmd-rvs b{color:#ff9a3c;letter-spacing:1px}.kmd-rvs u{color:#555}' +
+      '.kmd-rvl{margin:30px 0;clear:both}.kmd-rvl h3{font-size:20px;margin:0 0 14px}.kmd-rvl .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}' +
+      '.kmd-rvl .c{border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;background:#fff}.kmd-rvl .c img{width:100%;aspect-ratio:1;object-fit:cover;display:block}' +
+      '.kmd-rvl .c div{padding:12px 14px;font-size:14px;line-height:1.5}.kmd-rvl .c b{color:#ff9a3c;letter-spacing:1px}.kmd-rvl .c i{display:block;color:#6b7280;font-style:normal;font-size:12.5px;margin-top:6px}';
+    document.head.appendChild(s);
+  }
+  function rvGetJ(q) { return fetch(APP + '?' + q).then(function (r) { return r.json(); }); }
+  function rvPostJ(o) { return fetch(APP, { method: 'POST', body: JSON.stringify(o), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).then(function (r) { return r.json(); }); }
+  function rvShrink(file) {
+    return new Promise(function (res, rej) {
+      var u = URL.createObjectURL(file), im = new Image();
+      im.onload = function () {
+        var M = 1600, w = im.naturalWidth, h = im.naturalHeight, k = Math.min(1, M / Math.max(w, h));
+        var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+        res(c.toDataURL('image/jpeg', 0.85));
+      };
+      im.onerror = function () { rej(new Error('img')); }; im.src = u;
+    });
+  }
+  function rvPage() {
+    if (!/^\/tu-opinion\/?$/.test(location.pathname) || document.getElementById('kmd-rv')) return;
+    rvCss();
+    var q = {}; location.search.replace(/^\?/, '').split('&').forEach(function (kv) { var p = kv.split('='); if (p[0]) q[decodeURIComponent(p[0])] = decodeURIComponent((p[1] || '').replace(/\+/g, ' ')); });
+    var box = document.createElement('div'); box.id = 'kmd-rv'; box.className = 'kmd-rv';
+    var h1 = document.querySelector('h1'), host = (h1 && h1.parentNode) || document.querySelector('main') || document.body;
+    if (h1) { [].forEach.call(host.children, function (ch) { ch.style.display = 'none'; }); }
+    host.insertBefore(box, h1 ? host.firstChild : host.firstChild);
+    box.innerHTML = '<p class="sub">Cargando…</p>';
+    if (!q.o || !q.t) { box.innerHTML = '<h2>¡Hola!</h2><p class="sub">Para dejar tu opinión, entrá desde el link del mail que te mandamos.</p>'; return; }
+    var base = { o: q.o, t: q.t };
+    if (q.baja) {
+      box.innerHTML = '<h2>¿No querés recibir más mails como este?</h2><p class="sub">No te vamos a volver a escribir para pedirte opiniones.</p><button class="b" id="rvb">Sí, darme de baja</button>';
+      document.getElementById('rvb').onclick = function () { this.disabled = true; rvPostJ({ type: 'rv_baja', o: q.o, t: q.t }).then(function () { box.innerHTML = '<div class="thx"><h2>Listo</h2><p class="sub">No vas a recibir más mails de este tipo.</p></div>'; }); };
+      return;
+    }
+    var R = {}, photo = '';
+    if (q.p && q.r) { R[q.p] = Number(q.r); rvPostJ({ type: 'rv_rate', o: q.o, t: q.t, p: q.p, r: Number(q.r) }).catch(function () {}); }
+    rvGetJ('rv=info&o=' + encodeURIComponent(q.o) + '&t=' + encodeURIComponent(q.t)).then(function (j) {
+      if (!j.ok) { box.innerHTML = '<h2>Uy, este link no funciona</h2><p class="sub">Puede que esté incompleto. Si querés dejarnos tu opinión, escribinos a 3d.kmdesign@gmail.com.</p>'; return; }
+      var two = j.items.length > 1;
+      j.items.forEach(function (it) { if (!R[it.pid] && it.r) R[it.pid] = Number(it.r); });
+      var any = function () { return j.items.some(function (it) { return R[it.pid]; }); };
+      var h = '<h2 id="rvt"></h2><p class="sub" id="rvs"></p>';
+      j.items.forEach(function (it) {
+        h += '<div class="it" data-p="' + esc(it.pid) + '">' + (it.img ? '<img src="' + esc(it.img) + '" alt="">' : '') + '<div class="nm">' + esc(it.name) + '</div>' +
+          '<div class="st">' + [1, 2, 3, 4, 5].map(function (n) { return '<span data-v="' + n + '">★</span>'; }).join('') + '</div>' +
+          '<div class="ok" style="display:none">✓ Calificación guardada</div>' +
+          '<label class="l">¿Querés contarnos algo más? <small>(opcional)</small></label><textarea placeholder="Ej.: Quedó increíble, lo colgué en el living y todos me preguntan..."></textarea></div>';
+      });
+      h += '<div class="ph" id="rvph"><p>📸 <b>' + (two ? 'Sumá una foto de tu cuadro o tu tablero' : (j.items[0].kit ? 'Sumá una foto de tu tablero' : 'Sumá una foto de tu cuadro')) + '</b> <small style="color:#6b7280">(opcional)</small></p>' +
+        '<label class="b or">Sacar o elegir foto<input type="file" accept="image/*" hidden></label><div id="rvpv"></div></div>' +
+        '<div class="err" id="rve"></div><button class="b full" id="rvgo">Enviar</button>' +
+        '<p class="lg">Al enviar, aceptás que publiquemos tu opinión y tu foto en kmdesign.com.ar con tu nombre de pila.</p>';
+      box.innerHTML = h;
+      var paint = function () {
+        [].forEach.call(box.querySelectorAll('.it'), function (el) {
+          var p = el.getAttribute('data-p'), v = R[p] || 0;
+          [].forEach.call(el.querySelectorAll('.st span'), function (s) { s.className = Number(s.getAttribute('data-v')) <= v ? 'on' : ''; });
+          el.querySelector('.ok').style.display = v ? 'inline-block' : 'none';
+        });
+        document.getElementById('rvt').textContent = any() ? '¡Gracias por tu voto' + (j.nombre ? ', ' + j.nombre : '') + '!' : '¿Cuántas estrellas le das?';
+        document.getElementById('rvs').textContent = any() ? 'Si querés, contanos un poco más y sumá una foto.' : 'Tocá las estrellas para calificar.';
+      };
+      [].forEach.call(box.querySelectorAll('.it'), function (el) {
+        var p = el.getAttribute('data-p');
+        [].forEach.call(el.querySelectorAll('.st span'), function (s) {
+          s.onclick = function () { R[p] = Number(s.getAttribute('data-v')); paint(); rvPostJ({ type: 'rv_rate', o: q.o, t: q.t, p: p, r: R[p] }).catch(function () {}); };
+        });
+      });
+      paint();
+      var fi = box.querySelector('input[type=file]');
+      fi.onchange = function () {
+        var f = fi.files && fi.files[0]; if (!f) return;
+        document.getElementById('rvpv').innerHTML = '<p style="font-size:13px;color:#6b7280;margin:10px 0 0">Preparando la foto…</p>';
+        rvShrink(f).then(function (d) { photo = d; document.getElementById('rvpv').innerHTML = '<img src="' + d + '" alt="Tu foto">'; })
+          .catch(function () { document.getElementById('rvpv').innerHTML = '<p class="err">No pudimos leer esa foto. Probá con otra.</p>'; });
+      };
+      if (q.foto) setTimeout(function () { document.getElementById('rvph').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
+      document.getElementById('rvgo').onclick = function () {
+        var btn = this, e = document.getElementById('rve');
+        if (!any()) { e.textContent = 'Elegí las estrellas primero.'; return; }
+        var com = {}; [].forEach.call(box.querySelectorAll('.it'), function (el) { com[el.getAttribute('data-p')] = el.querySelector('textarea').value; });
+        btn.disabled = true; btn.textContent = 'Enviando…'; e.textContent = '';
+        rvPostJ({ type: 'rv_send', o: q.o, t: q.t, stars: R, comments: com, photo: photo ? { data: photo, type: 'image/jpeg' } : null }).then(function (r) {
+          if (!r.ok) throw new Error(r.err || 'x');
+          box.innerHTML = '<div class="thx"><div class="ic">🏅</div><h2>¡Mil gracias' + (j.nombre ? ', ' + esc(j.nombre) : '') + '!</h2><p class="sub">' + esc(j.gracias || '') + '</p><p class="sub" style="font-size:12.5px">Ya podés cerrar esta página.</p><a class="b" href="/">Ir a la tienda</a></div>';
+          window.scrollTo(0, 0);
+        }).catch(function () { btn.disabled = false; btn.textContent = 'Enviar'; e.textContent = 'No se pudo enviar. Revisá tu conexión y probá de nuevo.'; });
+      };
+    }).catch(function () { box.innerHTML = '<h2>Uy, algo falló</h2><p class="sub">Probá recargar la página en un ratito.</p>'; });
+  }
+  function rvProduct() {
+    var pid = window.LS && LS.product && LS.product.id;
+    if (!pid || document.querySelector('.kmd-rvl')) return;
+    rvGetJ('rv=lista&p=' + pid).then(function (j) {
+      if (!j || !j.ok || !j.n) return;
+      rvCss();
+      var stars = function (r) { return '★★★★★'.slice(0, Math.round(r)) + '<span style="color:#d1d5db">' + '★★★★★'.slice(0, 5 - Math.round(r)) + '</span>'; };
+      var sec = document.createElement('div'); sec.className = 'kmd-rvl'; sec.id = 'opiniones';
+      sec.innerHTML = '<h3>Opiniones de clientes · ' + j.avg.toString().replace('.', ',') + ' ★ (' + j.n + ')</h3><div class="g">' + j.list.map(function (r) {
+        return '<div class="c">' + (r.f ? '<img loading="lazy" src="' + esc(r.f) + '" alt="Foto de ' + esc(r.n) + '">' : '') + '<div><b>' + stars(r.r) + '</b><br>' + esc(r.c) + '<i>' + esc(r.n) + ' · ' + esc(r.d) + '</i></div></div>';
+      }).join('') + '</div>';
+      var anchor = document.querySelector('.js-product-description, [data-store="product-description"], .product-description, #product-description') || document.querySelector('form.js-product-form, #product_form');
+      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(sec, anchor.nextSibling); else (document.querySelector('main') || document.body).appendChild(sec);
+      var t = document.querySelector('h1.js-product-name, h1[data-store="product-name"], .js-product-name, h1');
+      if (t) {
+        var s = document.createElement('div'); s.className = 'kmd-rvs';
+        s.innerHTML = '<b>' + stars(j.avg) + '</b><u>' + j.n + (j.n === 1 ? ' opinión' : ' opiniones') + '</u>';
+        s.onclick = function () { sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+        t.parentNode.insertBefore(s, t.nextSibling);
+      }
+    }).catch(function () {});
+  }
+  function reviews(n) { try { rvPage(); rvProduct(); } catch (e) {} }
+  function start() { boot(0); kit(0); custom(0); reviews(0); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
