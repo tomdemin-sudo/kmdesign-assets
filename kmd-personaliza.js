@@ -1045,6 +1045,83 @@
     }).catch(function () {});
   }
   function reviews(n) { try { rvPage(); rvProduct(); } catch (e) {} }
-  function start() { boot(0); kit(0); custom(0); reviews(0); }
+  /* ===== HOME v1 (portada nueva) ===== */
+  var HB = 'https://cdn.jsdelivr.net/gh/tomdemin-sudo/kmdesign-assets@main/';
+  var homeCss = '[data-store="home-welcome-message"],[data-store="home-slider"],[data-store="home-banner-categories"],[data-store="home-banner-with-image"]{display:none!important}'
+    + '#kmd-home{font-family:Poppins,sans-serif;color:#e5e7eb}'
+    + '#kmd-home *{box-sizing:border-box}'
+    + '#kmd-home a{text-decoration:none}'
+    + '.kh-hero{background:linear-gradient(180deg,#181a20,#0c0d10);display:grid;grid-template-columns:1fr;text-align:center;padding-bottom:28px}'
+    + '.kh-hero picture,.kh-hero img{display:block;width:100%;height:auto}'
+    + '.kh-tx{padding:0 20px}'
+    + '#kmd-home h2.kh-h{color:#fff!important;font-weight:500;font-size:30px;line-height:1.12;margin:4px 0 10px;letter-spacing:-.3px}'
+    + '.kh-p{color:#9ca3af;font-size:15px;line-height:1.5;margin:0 auto 20px;max-width:440px}'
+    + '.kh-btn{display:inline-block;background:#e67e22;color:#fff!important;font-weight:600;padding:15px 30px;border-radius:30px;font-size:13px;text-transform:uppercase;letter-spacing:1.04px;box-shadow:0 6px 22px rgba(230,126,34,.35)}'
+    + '.kh-btn:hover{background:#fb923c}'
+    + '.kh-btn2{display:inline-block;border:1px solid #4b4f57;color:#e5e7eb!important;font-weight:600;padding:11px 22px;border-radius:30px;font-size:12px;text-transform:uppercase;letter-spacing:1.04px;margin-top:12px}'
+    + '.kh-chips{display:flex;justify-content:center;gap:8px;margin-top:14px;font-size:12px}'
+    + '.kh-chips span{background:#1c1e24;border:1px solid #2a2d34;padding:5px 11px;border-radius:20px}'
+    + '.kh-sec{padding:40px 18px;text-align:center;max-width:1100px;margin:0 auto}'
+    + '#kmd-home h3.kh-t{color:#fff!important;font-weight:500;font-size:24px;margin:0 0 6px}'
+    + '.kh-sub{color:#9ca3af;font-size:14px;margin:0}'
+    + '.kh-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}'
+    + '.kh-steps div{background:#16181d;border:1px solid #23262d;border-radius:14px;padding:16px 10px;font-size:13px;line-height:1.4}'
+    + '.kh-steps b{display:block;font-size:22px;color:#e67e22;margin-bottom:4px}'
+    + '.kh-nogps{margin-top:14px;background:rgba(230,126,34,.1);border:1px dashed #e67e22;border-radius:14px;padding:14px 16px;font-size:14px;text-align:left;line-height:1.45}'
+    + '.kh-nogps b{color:#fb923c}'
+    + '.kh-real{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}'
+    + '.kh-real img{width:100%;height:auto;border-radius:14px;display:block}'
+    + '.kh-kit{background:#08090b;border-top:1px solid #1f2127;border-bottom:1px solid #1f2127}'
+    + '.kh-kit .kh-in{display:grid;grid-template-columns:1fr;max-width:1100px;margin:0 auto;align-items:center}'
+    + '.kh-kit img{width:100%;height:auto;display:block}'
+    + '.kh-kit .kh-tx{padding:28px 20px 40px;text-align:center}'
+    + '@media(min-width:768px){'
+    + '.kh-hero{grid-template-columns:1fr 1.15fr;text-align:left;align-items:center;padding:0;max-width:none}'
+    + '.kh-hero .kh-tx{order:-1;padding:40px 30px 40px 8vw}'
+    + '#kmd-home h2.kh-h{font-size:46px}'
+    + '.kh-p{margin-left:0;font-size:16px}'
+    + '.kh-chips{justify-content:flex-start}'
+    + '.kh-hero .kh-btn2{margin-left:12px;margin-top:0}'
+    + '.kh-real{grid-template-columns:1fr 1fr;max-width:760px;margin:20px auto 0}'
+    + '.kh-kit .kh-in{grid-template-columns:1fr 1fr}'
+    + '.kh-kit img{max-height:560px;object-fit:cover}'
+    + '.kh-kit .kh-tx{text-align:left;padding:40px}'
+    + '}'
+    + '@media(max-width:420px){.kh-steps{grid-template-columns:1fr}}';
+
+  function home(n) {
+    if (location.pathname !== '/' && location.pathname !== '') return;
+    if (!document.getElementById('kmd-home-css')) {
+      var st = document.createElement('style'); st.id = 'kmd-home-css'; st.textContent = homeCss;
+      document.head.appendChild(st);
+    }
+    if (document.getElementById('kmd-home')) return;
+    var anchor = document.querySelector('[data-store="home-slider"]') || document.querySelector('[data-store="home-welcome-message"]');
+    if (!anchor) { if ((n || 0) < 60) setTimeout(function () { home((n || 0) + 1); }, 100); return; }
+    var CU = '/productos/tu-cuadro-personalizado/', KIT = '/productos/kit-mis-records/';
+    var h = document.createElement('div'); h.id = 'kmd-home';
+    h.innerHTML =
+      '<section class="kh-hero">'
+      + '<picture><source media="(min-width:768px)" srcset="' + HB + 'home_hero_d.webp"><img src="' + HB + 'home_hero_m.webp" width="900" height="792" alt="Cuadro personalizado con portamedalla y mapa en relieve 3D de tu carrera" fetchpriority="high"></picture>'
+      + '<div class="kh-tx"><h2 class="kh-h">Tu carrera,<br>en relieve 3D</h2>'
+      + '<p class="kh-p">Subí el GPX de tu reloj y mirá tu cuadro al instante: mapa real, tus datos y lugar para tu medalla.</p>'
+      + '<a class="kh-btn" href="' + CU + '">Armá tu cuadro &rarr;</a> <a class="kh-btn2" href="/productos/">Ver ejemplos</a>'
+      + '<div class="kh-chips"><span>🏃 Running</span><span>🏊🚴🏃 Triatlón</span></div></div>'
+      + '</section>'
+      + '<section class="kh-sec"><h3 class="kh-t">Así de fácil</h3><p class="kh-sub">Ves cómo queda antes de comprar.</p>'
+      + '<div class="kh-steps"><div><b>1</b>Subí tu GPX de Strava, Garmin o tu reloj</div><div><b>2</b>Mirá tu cuadro al instante</div><div><b>3</b>Lo imprimimos en 3D y te llega a tu casa</div></div>'
+      + '<div class="kh-nogps"><b>¿No tenés tu archivo GPX? No pasa nada.</b><br>Decinos qué carrera corriste y nosotros conseguimos el recorrido.</div>'
+      + '<p style="margin-top:22px"><a class="kh-btn" href="' + CU + '">Armá tu cuadro &rarr;</a></p></section>'
+      + '<section class="kh-sec" style="padding-top:10px"><h3 class="kh-t">Así queda en la vida real</h3><p class="kh-sub">Mapa real en relieve, impreso en 3D.</p>'
+      + '<div class="kh-real"><img src="' + HB + 'home_real1.webp" width="600" height="800" loading="lazy" alt="Cuadro IRONMAN 70.3 con portamedalla y tres mapas en relieve"><img src="' + HB + 'home_real2.webp" width="600" height="800" loading="lazy" alt="Detalle del mapa en relieve 3D de la Maratón de Buenos Aires"></div></section>'
+      + '<section class="kh-kit"><div class="kh-in"><img src="' + HB + 'home_kit.webp" width="800" height="999" loading="lazy" alt="Kit MIS RÉCORDS con placas 3D de tus mejores tiempos">'
+      + '<div class="kh-tx"><h3 class="kh-t" style="font-size:28px">Kit MIS RÉCORDS</h3>'
+      + '<p class="kh-p" style="margin-bottom:20px">Tus mejores tiempos en placas 3D intercambiables: 5K, 10K, maratón, IRONMAN, HYROX y más. Lo actualizás cada vez que bajás tu marca.</p>'
+      + '<a class="kh-btn" href="' + KIT + '">Armá tu tablero &rarr;</a></div></div></section>';
+    anchor.parentNode.insertBefore(h, anchor);
+  }
+
+
+  function start() { boot(0); kit(0); custom(0); reviews(0); home(0); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
