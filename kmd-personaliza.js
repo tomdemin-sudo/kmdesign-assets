@@ -1047,7 +1047,7 @@
   function reviews(n) { try { rvPage(); rvProduct(); } catch (e) {} }
   /* ===== HOME v1 (portada nueva) ===== */
   var HB = 'https://cdn.jsdelivr.net/gh/tomdemin-sudo/kmdesign-assets@main/';
-  var homeCss = '[data-store="home-welcome-message"],[data-store="home-slider"],[data-store="home-banner-categories"],[data-store="home-banner-with-image"]{display:none!important}'
+  var homeCss = '[data-store="home-welcome-message"],[data-store="home-slider"],[data-store="home-banner-categories"],[data-store="home-banner-with-image"],[data-store="home-banner-promotional"]{display:none!important}'
     + '#kmd-home{font-family:Poppins,sans-serif;color:#e5e7eb}'
     + '#kmd-home *{box-sizing:border-box}'
     + '#kmd-home a{text-decoration:none}'
@@ -1076,9 +1076,9 @@
     + '.kh-kit img{width:100%;height:auto;display:block}'
     + '.kh-kit .kh-tx{padding:28px 20px 40px;text-align:center}'
     + '@media(min-width:768px){'
-    + '.kh-hero{grid-template-columns:1fr 1.15fr;text-align:left;align-items:center;padding:0;max-width:none}'
-    + '.kh-hero .kh-tx{order:-1;padding:40px 30px 40px 8vw}'
-    + '#kmd-home h2.kh-h{font-size:46px}'
+    + '.kh-hero{grid-template-columns:minmax(0,1fr) minmax(0,640px);justify-content:center;gap:2vw;text-align:left;align-items:center;padding:10px 6vw}'
+    + '.kh-hero .kh-tx{order:-1;padding:30px 0;max-width:520px;justify-self:end}'
+    + '#kmd-home h2.kh-h{font-size:52px}'
     + '.kh-p{margin-left:0;font-size:16px}'
     + '.kh-chips{justify-content:flex-start}'
     + '.kh-hero .kh-btn2{margin-left:12px;margin-top:0}'
