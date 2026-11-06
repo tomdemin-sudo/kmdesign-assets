@@ -1095,8 +1095,8 @@
     + '@keyframes khp{0%{transform:scale(.95);opacity:.9}100%{transform:scale(1.12);opacity:0}}'
     + '.kh-m3 span{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);background:#fb923c;color:#111;font:600 12px Poppins,sans-serif;padding:5px 11px;border-radius:99px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.35)}'
     + '@media(min-width:768px){.kh-m3{left:67.62%;top:44.89%;width:26.46%}}'
-    + '.kh-v3{position:fixed;inset:0;z-index:2147483000;background:radial-gradient(circle at 50% 35%,#f4f2ee,#d6d1c9);font-family:Poppins,sans-serif}'
-    + '.kh-v3 a{text-decoration:none}'
+    + '.kh-v3{position:absolute;inset:0;z-index:5;overflow:hidden;background:radial-gradient(circle at 50% 35%,#f4f2ee,#d6d1c9);font-family:Poppins,sans-serif}'
+    + '.kh-v3 a{text-decoration:none}.kh-v3 .kh-btn{padding:10px 18px;font-size:11px}'
     + '.kh-v3gl{position:absolute;inset:0;touch-action:none;cursor:grab}.kh-v3gl canvas{display:block;width:100%!important;height:100%!important}'
     + '.kh-v3top{position:absolute;left:12px;right:12px;top:12px;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}'
     + '.kh-v3b{background:#fb923c;color:#111;font:600 11px Poppins,sans-serif;padding:5px 9px;border-radius:6px;letter-spacing:.04em}'
@@ -1104,18 +1104,18 @@
     + '.kh-v3msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 15px Poppins,sans-serif;color:#2b2b2b;text-align:center;padding:20px;pointer-events:none}'
     + '.kh-v3foot{position:absolute;left:12px;right:12px;bottom:18px;display:flex;flex-direction:column;align-items:center;gap:10px;font:500 12px Poppins,sans-serif;color:#3b3b3b;pointer-events:none}.kh-v3foot a{pointer-events:auto}';
 
-  function homeV3() {
+  function homeV3(ev) {
     if (!CAN3D) { location.href = '/productos/tu-cuadro-personalizado/'; return; }
     var M = document.createElement('div'); M.className = 'kh-v3';
     M.innerHTML = '<div class="kh-v3gl"></div><div class="kh-v3top"><span class="kh-v3b">MARATÓN DE BUENOS AIRES · VISTA 3D</span><button type="button" class="kh-v3x">✕ Cerrar</button></div>'
       + '<div class="kh-v3msg">Armando el mapa en 3D…</div>'
       + '<div class="kh-v3foot"><span>Arrastrá para girar · pellizcá para acercar</span><a class="kh-btn" href="/productos/tu-cuadro-personalizado/">Armá el tuyo &rarr;</a></div>';
-    document.body.appendChild(M); document.documentElement.style.overflow = 'hidden';
+    var host = (ev && ev.currentTarget && ev.currentTarget.closest && ev.currentTarget.closest('.kh-pic')) || document.querySelector('.kh-pic'); if (!host || host.querySelector('.kh-v3')) return; host.appendChild(M);
     var gl = M.querySelector('.kh-v3gl'), msg = M.querySelector('.kh-v3msg'), st = { on: true, ren: null, raf: 0, cam: null };
     function rs() { if (st.ren) { var w = gl.clientWidth, h = gl.clientHeight; st.ren.setSize(w, h); st.cam.aspect = w / h; st.cam.updateProjectionMatrix(); } }
     function esc(e) { if (e.key === 'Escape') close(); }
     function close() { st.on = false; cancelAnimationFrame(st.raf); if (st.ren) { try { st.ren.dispose(); st.ren.forceContextLoss(); } catch (e) {} st.ren = null; }
-      M.remove(); document.documentElement.style.overflow = ''; document.removeEventListener('keydown', esc); window.removeEventListener('resize', rs); }
+      M.remove(); document.removeEventListener('keydown', esc); window.removeEventListener('resize', rs); }
     M.querySelector('.kh-v3x').addEventListener('click', close); document.addEventListener('keydown', esc); window.addEventListener('resize', rs);
     Promise.all([fetch(HB + 'home_maraton_bsas.gpx').then(function (r) { return r.text(); }), loadMap(), load3D()]).then(function (a) {
       var rg = region(parseGpx(a[0])); return Promise.all([heightGrid(rg), waterTexture(rg), rg]);
