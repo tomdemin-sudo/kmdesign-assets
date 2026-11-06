@@ -1089,10 +1089,55 @@
     + '}'
     + '@media(max-width:420px){.kh-steps{grid-template-columns:1fr}}';
 
+  var homeCss3 = '.kh-pic{position:relative}'
+    + '.kh-m3{position:absolute;left:68.76%;top:49.09%;width:28.17%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:0;background:transparent;cursor:pointer;padding:0}'
+    + '.kh-m3::before{content:"";position:absolute;inset:-3%;border-radius:50%;border:3px solid #fb923c;animation:khp 1.8s ease-out infinite}'
+    + '@keyframes khp{0%{transform:scale(.95);opacity:.9}100%{transform:scale(1.12);opacity:0}}'
+    + '.kh-m3 span{position:absolute;left:50%;bottom:-7%;transform:translateX(-50%);background:#fb923c;color:#111;font:600 12px Poppins,sans-serif;padding:5px 11px;border-radius:99px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.35)}'
+    + '@media(min-width:768px){.kh-m3{left:67.62%;top:44.89%;width:26.46%}}'
+    + '.kh-v3{position:fixed;inset:0;z-index:2147483000;background:radial-gradient(circle at 50% 35%,#f4f2ee,#d6d1c9);font-family:Poppins,sans-serif}'
+    + '.kh-v3 a{text-decoration:none}'
+    + '.kh-v3gl{position:absolute;inset:0;touch-action:none;cursor:grab}.kh-v3gl canvas{display:block;width:100%!important;height:100%!important}'
+    + '.kh-v3top{position:absolute;left:12px;right:12px;top:12px;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}'
+    + '.kh-v3b{background:#fb923c;color:#111;font:600 11px Poppins,sans-serif;padding:5px 9px;border-radius:6px;letter-spacing:.04em}'
+    + '.kh-v3x{background:#111;color:#fff;border:0;border-radius:99px;padding:9px 16px;font:600 13px Poppins,sans-serif;cursor:pointer}'
+    + '.kh-v3msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 15px Poppins,sans-serif;color:#2b2b2b;text-align:center;padding:20px;pointer-events:none}'
+    + '.kh-v3foot{position:absolute;left:12px;right:12px;bottom:18px;display:flex;flex-direction:column;align-items:center;gap:10px;font:500 12px Poppins,sans-serif;color:#3b3b3b;pointer-events:none}.kh-v3foot a{pointer-events:auto}';
+
+  function homeV3() {
+    if (!CAN3D) { location.href = '/productos/tu-cuadro-personalizado/'; return; }
+    var M = document.createElement('div'); M.className = 'kh-v3';
+    M.innerHTML = '<div class="kh-v3gl"></div><div class="kh-v3top"><span class="kh-v3b">MARATÓN DE BUENOS AIRES · VISTA 3D</span><button type="button" class="kh-v3x">✕ Cerrar</button></div>'
+      + '<div class="kh-v3msg">Armando el mapa en 3D…</div>'
+      + '<div class="kh-v3foot"><span>Arrastrá para girar · pellizcá para acercar</span><a class="kh-btn" href="/productos/tu-cuadro-personalizado/">Armá el tuyo &rarr;</a></div>';
+    document.body.appendChild(M); document.documentElement.style.overflow = 'hidden';
+    var gl = M.querySelector('.kh-v3gl'), msg = M.querySelector('.kh-v3msg'), st = { on: true, ren: null, raf: 0, cam: null };
+    function rs() { if (st.ren) { var w = gl.clientWidth, h = gl.clientHeight; st.ren.setSize(w, h); st.cam.aspect = w / h; st.cam.updateProjectionMatrix(); } }
+    function esc(e) { if (e.key === 'Escape') close(); }
+    function close() { st.on = false; cancelAnimationFrame(st.raf); if (st.ren) { try { st.ren.dispose(); st.ren.forceContextLoss(); } catch (e) {} st.ren = null; }
+      M.remove(); document.documentElement.style.overflow = ''; document.removeEventListener('keydown', esc); window.removeEventListener('resize', rs); }
+    M.querySelector('.kh-v3x').addEventListener('click', close); document.addEventListener('keydown', esc); window.addEventListener('resize', rs);
+    Promise.all([fetch(HB + 'home_maraton_bsas.gpx').then(function (r) { return r.text(); }), loadMap(), load3D()]).then(function (a) {
+      var rg = region(parseGpx(a[0])); return Promise.all([heightGrid(rg), waterTexture(rg), rg]);
+    }).then(function (r) {
+      if (!st.on) return;
+      var w = gl.clientWidth, h = gl.clientHeight, ren = new THREE.WebGLRenderer({ antialias: true, alpha: true }); ren.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); ren.setSize(w, h);
+      if (THREE.sRGBEncoding) ren.outputEncoding = THREE.sRGBEncoding; gl.innerHTML = ''; gl.appendChild(ren.domElement);
+      var sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(35, w / h, 0.05, 50); cam.position.set(0, 2.35, 2.75);
+      if (w < h) cam.position.multiplyScalar(1.35);
+      sc.add(new THREE.HemisphereLight(0xffffff, 0x3a3530, 0.5)); var dl = new THREE.DirectionalLight(0xffffff, 0.85); dl.position.set(-2.2, 3, 1.4); sc.add(dl);
+      var pc = buildPiece(r[2], r[0], r[1]); pc.grp.position.y = -0.1; sc.add(pc.grp); sc.add(shadowMesh());
+      var ct = new THREE.OrbitControls(cam, ren.domElement); ct.enableDamping = true; ct.dampingFactor = 0.08; ct.enablePan = false; ct.minDistance = 1.3; ct.maxDistance = 6; ct.maxPolarAngle = Math.PI * 0.62; ct.autoRotate = true; ct.autoRotateSpeed = 1.1;
+      ren.domElement.addEventListener('pointerdown', function () { ct.autoRotate = false; });
+      st.ren = ren; st.cam = cam; msg.style.display = 'none';
+      (function loop() { if (!st.on || st.ren !== ren) return; ct.update(); ren.render(sc, cam); st.raf = requestAnimationFrame(loop); })();
+    }).catch(function () { if (st.on) msg.textContent = 'No pudimos armar la vista 3D ahora. Probá de nuevo en un rato.'; });
+  }
+
   function home(n) {
     if (location.pathname !== '/' && location.pathname !== '') return;
     if (!document.getElementById('kmd-home-css')) {
-      var st = document.createElement('style'); st.id = 'kmd-home-css'; st.textContent = homeCss;
+      var st = document.createElement('style'); st.id = 'kmd-home-css'; st.textContent = homeCss + homeCss3;
       document.head.appendChild(st);
     }
     if (document.getElementById('kmd-home')) return;
@@ -1102,7 +1147,7 @@
     var h = document.createElement('div'); h.id = 'kmd-home';
     h.innerHTML =
       '<section class="kh-hero">'
-      + '<picture><source media="(min-width:768px)" srcset="' + HB + 'home_hero_d.webp"><img src="' + HB + 'home_hero_m.webp" width="900" height="792" alt="Cuadro personalizado con portamedalla y mapa en relieve 3D de tu carrera" fetchpriority="high"></picture>'
+      + '<div class="kh-pic"><picture><source media="(min-width:768px)" srcset="' + HB + 'home_hero_d2.webp"><img src="' + HB + 'home_hero_m2.webp" width="900" height="792" alt="Cuadro de la Maratón de Buenos Aires con portamedalla y mapa en relieve 3D" fetchpriority="high"></picture><button type="button" class="kh-m3" aria-label="Ver el mapa en 3D"><span>Ver en 3D</span></button></div>'
       + '<div class="kh-tx"><h2 class="kh-h">Tu carrera,<br>en relieve 3D</h2>'
       + '<p class="kh-p">Subí el GPX de tu reloj y mirá tu cuadro al instante: mapa real, tus datos y lugar para tu medalla.</p>'
       + '<a class="kh-btn" href="' + CU + '">Armá tu cuadro &rarr;</a> <a class="kh-btn2" href="/productos/">Ver ejemplos</a>'
@@ -1119,6 +1164,7 @@
       + '<p class="kh-p" style="margin-bottom:20px">Tus mejores tiempos en placas 3D intercambiables: 5K, 10K, maratón, IRONMAN, HYROX y más. Lo actualizás cada vez que bajás tu marca.</p>'
       + '<a class="kh-btn" href="' + KIT + '">Armá tu tablero &rarr;</a></div></div></section>';
     anchor.parentNode.insertBefore(h, anchor);
+    var b3 = h.querySelector('.kh-m3'); if (b3) b3.addEventListener('click', homeV3);
   }
 
 
