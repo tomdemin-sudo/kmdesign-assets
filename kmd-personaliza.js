@@ -1093,7 +1093,7 @@
     + '.kh-m3{position:absolute;left:68.76%;top:49.09%;width:28.17%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:0;background:transparent;cursor:pointer;padding:0}'
     + '.kh-m3::before{content:"";position:absolute;inset:-3%;border-radius:50%;border:3px solid #fb923c;animation:khp 1.8s ease-out infinite}'
     + '@keyframes khp{0%{transform:scale(.95);opacity:.9}100%{transform:scale(1.12);opacity:0}}'
-    + '.kh-m3 span{position:absolute;left:50%;bottom:-7%;transform:translateX(-50%);background:#fb923c;color:#111;font:600 12px Poppins,sans-serif;padding:5px 11px;border-radius:99px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.35)}'
+    + '.kh-m3 span{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);background:#fb923c;color:#111;font:600 12px Poppins,sans-serif;padding:5px 11px;border-radius:99px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.35)}'
     + '@media(min-width:768px){.kh-m3{left:67.62%;top:44.89%;width:26.46%}}'
     + '.kh-v3{position:fixed;inset:0;z-index:2147483000;background:radial-gradient(circle at 50% 35%,#f4f2ee,#d6d1c9);font-family:Poppins,sans-serif}'
     + '.kh-v3 a{text-decoration:none}'
@@ -1124,10 +1124,10 @@
       var w = gl.clientWidth, h = gl.clientHeight, ren = new THREE.WebGLRenderer({ antialias: true, alpha: true }); ren.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); ren.setSize(w, h);
       if (THREE.sRGBEncoding) ren.outputEncoding = THREE.sRGBEncoding; gl.innerHTML = ''; gl.appendChild(ren.domElement);
       var sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(35, w / h, 0.05, 50); cam.position.set(0, 2.35, 2.75);
-      if (w < h) cam.position.multiplyScalar(1.35);
+      if (w < h) cam.position.multiplyScalar(Math.min(2.6, 1.1 / (w / h)));
       sc.add(new THREE.HemisphereLight(0xffffff, 0x3a3530, 0.5)); var dl = new THREE.DirectionalLight(0xffffff, 0.85); dl.position.set(-2.2, 3, 1.4); sc.add(dl);
       var pc = buildPiece(r[2], r[0], r[1]); pc.grp.position.y = -0.1; sc.add(pc.grp); sc.add(shadowMesh());
-      var ct = new THREE.OrbitControls(cam, ren.domElement); ct.enableDamping = true; ct.dampingFactor = 0.08; ct.enablePan = false; ct.minDistance = 1.3; ct.maxDistance = 6; ct.maxPolarAngle = Math.PI * 0.62; ct.autoRotate = true; ct.autoRotateSpeed = 1.1;
+      var ct = new THREE.OrbitControls(cam, ren.domElement); ct.enableDamping = true; ct.dampingFactor = 0.08; ct.enablePan = false; ct.minDistance = 1.3; ct.maxDistance = Math.max(6, cam.position.length() + 1); ct.maxPolarAngle = Math.PI * 0.62; ct.autoRotate = true; ct.autoRotateSpeed = 1.1;
       ren.domElement.addEventListener('pointerdown', function () { ct.autoRotate = false; });
       st.ren = ren; st.cam = cam; msg.style.display = 'none';
       (function loop() { if (!st.on || st.ren !== ren) return; ct.update(); ren.render(sc, cam); st.raf = requestAnimationFrame(loop); })();
