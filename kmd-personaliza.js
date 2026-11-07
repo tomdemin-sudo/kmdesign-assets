@@ -749,6 +749,17 @@
       xy.forEach(function (q, i) { var x = C[0] + (q[0] - cx) * sc, y = C[1] + (q[1] - cy) * sc; if (lx === null || i === xy.length - 1 || Math.hypot(x - lx, y - ly) >= 0.7) { d += (d ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); lx = x; ly = y; } });
       return d;
     }
+    function ph(leg, c) {
+      var C = leg.c, r = C[2], g = sv('g', {}, svg);
+      sv('circle', { cx: C[0], cy: C[1], r: r + 4, fill: '#ffffff' }, g);
+      sv('circle', { cx: C[0], cy: C[1], r: r * 0.93, fill: '#fff7ef', stroke: '#fb923c', 'stroke-width': Math.max(3, r * 0.018), 'stroke-dasharray': (r * 0.07).toFixed(1) + ' ' + (r * 0.05).toFixed(1) }, g);
+      sv('path', { d: 'M' + (C[0] - r * 0.09) + ' ' + (C[1] - r * 0.22) + 'h' + (r * 0.18) + 'M' + C[0] + ' ' + (C[1] - r * 0.31) + 'v' + (r * 0.18), stroke: '#fb923c', 'stroke-width': r * 0.035, 'stroke-linecap': 'round', fill: 'none' }, g);
+      var t1 = sv('text', { x: C[0], y: C[1] + r * 0.03, 'text-anchor': 'middle', 'font-family': 'Inter,Poppins,sans-serif', 'font-weight': 700, 'font-size': r * 0.105, fill: '#111' }, g); t1.textContent = 'Subí tu archivo GPX';
+      var t2 = sv('text', { x: C[0], y: C[1] + r * 0.18, 'text-anchor': 'middle', 'font-family': 'Inter,Poppins,sans-serif', 'font-weight': 500, 'font-size': r * 0.085, fill: '#555' }, g); t2.textContent = 'para ver la vista previa';
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'kmd-hot'; b.setAttribute('aria-label', 'Subir archivo GPX');
+      b.style.left = ((C[0] - r) / c.W * 100) + '%'; b.style.top = ((C[1] - r) / c.H * 100) + '%'; b.style.width = (2 * r / c.W * 100) + '%';
+      b.addEventListener('click', function () { var inp = drops.querySelector('input[type=file]'); if (inp) inp.click(); }); pic.appendChild(b);
+    }
     function draw() {
       var c = CP[type]; svg.setAttribute('viewBox', '0 0 ' + c.W + ' ' + c.H); svg.innerHTML = '';
       maps.forEach(function (m) { try { m.map && m.map.remove(); } catch (e) {} m.div.remove(); }); maps = [];
@@ -756,7 +767,7 @@
       var T = tracks(), has = T.some(Boolean);
       credit.hidden = !has; dis.hidden = !has; b3d.hidden = !(has && CAN3D);
       c.legs.forEach(function (leg, i) {
-        var pts = T[i]; if (!pts) return; var C = leg.c, r = C[2], w = Math.max(4, r * 0.042);
+        var pts = T[i]; if (!pts) { if (type !== 'triatlon') ph(leg, c); return; } var C = leg.c, r = C[2], w = Math.max(4, r * 0.042);
         var G = sv('g', {}, svg); sv('circle', { cx: C[0], cy: C[1], r: r + 1.5, fill: '#232427' }, G);
         var d = routeD(pts, C); sv('path', { d: d, fill: 'none', stroke: '#f26a1d', 'stroke-width': w, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, G);
         if (CAN3D) { var b = document.createElement('button'); b.type = 'button'; b.className = 'kmd-hot'; b.setAttribute('aria-label', 'Ver ' + leg.n + ' en 3D');
