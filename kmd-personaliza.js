@@ -51,8 +51,8 @@
     var tries = 0;
     (function wait() {
       var txt = document.body ? document.body.innerText : '';
-      var m = txt.match(/(?:orden|pedido|compra)[^#\d]{0,25}#?\s?(\d{2,8})/i) || txt.match(/#(\d{2,8})/);
-      var num = (window.LS && LS.order && (LS.order.number || LS.order.id)) || (m && m[1]);
+      var m = txt.match(/#\s?(\d{2,8})\b/) || txt.match(/(?:orden|pedido)\s*(?:n(?:ú|u)mero|n[°º.])?\s*:?\s*(\d{2,8})\b/i);
+      var num = (window.LS && LS.order && LS.order.number) || (m && m[1]);
       if (!num && tries++ < 6) return setTimeout(wait, 500);
       var html = '';
       if (list.length) {
@@ -63,7 +63,7 @@
       }
       if (clist.length) {
         var items = clist.map(function (r) { return { race: r.race, text: r.text || ('Carrera: ' + r.race), gpx: r.gpx || '' }; });
-        api({ type: 'order', order: num || '', items: items });
+        api({ type: 'order', order: num || '', url: location.href.split('?')[0], items: items });
         post('🗺️ CUADRO PERSONALIZADO · COMPRA CONFIRMADA\nPedido: #' + (num || '¿?') + '\n' + items.map(function (i) { return i.text; }).join('\n\n'));
         cset(cget().map(function (r) { r.sent = 1; return r; }));
         html += (html ? '<br><br>' : '') + '<b>¡Recibimos los datos de tu cuadro!</b><br>' + items.map(function (i) { return 'Cuadro: <b>' + esc(i.race) + '</b><br>Archivo GPX: <b>' + (i.gpx ? 'recibido' : 'pendiente') + '</b>'; }).join('<br><br>') +
@@ -366,10 +366,45 @@
     } catch (e) {}
   }
   var fixing = false, lastSig = '';
+  /* ---- cuadro personalizado: datos guardados = solo lo que sigue en el carrito ---- */
+  function cTipo(t) { var m = /Tipo:\s*([^\n]+)/.exec(t || ''); return m ? m[1].trim() : ''; }
+  function csync(items, hard) {
+    try {
+      var all = cget(), now = Date.now(), live = all.filter(function (r) { return !r.sent && now - r.ts < 7 * 864e5; });
+      if (!live.length || !items) return;
+      var N = 0; items.forEach(function (i) { if (i.pid === CUSTOM_ID) N += i.q || 1; });
+      live.sort(function (a, b) { return b.ts - a.ts; });
+      var keep = live.filter(function (r, k) { return k < N || (!hard && now - r.ts < 20000); });
+      if (keep.length === live.length) return;
+      cset(all.filter(function (r) { return r.sent || keep.indexOf(r) > -1; }));
+    } catch (e) {}
+  }
+  function cLines(r) {
+    return String(r.text || '').split('\n').filter(function (l) { return l && !/^(Tipo|Link actividad):/.test(l); }).map(function (l) {
+      var m = /^([^:]+):\s*(.*)$/.exec(l); if (!m) return esc(l);
+      var v = m[2]; if (m[1] === 'GPX') v = /no lo subi/.test(v) ? 'pendiente (lo podés mandar después)' : 'recibido ✓';
+      return esc(m[1]) + ': <b style="color:#fff">' + esc(v) + '</b>';
+    }).join('<br>');
+  }
+  function showCustom() {
+    try {
+      var live = cget().filter(function (r) { return !r.sent && Date.now() - r.ts < 7 * 864e5; }).sort(function (a, b) { return a.ts - b.ts; });
+      document.querySelectorAll('[data-store="cart-item-' + CUSTOM_ID + '"]').forEach(function (row) {
+        var nm = row.querySelector('.name, .js-cart-item-name') || row, t = row.querySelector('.kmd-cdet');
+        var lab = ((row.querySelector('.name small') || {}).textContent || '').toLowerCase();
+        var mine = live.filter(function (r) { var tp = cTipo(r.text).toLowerCase(); return !lab || !tp || lab.indexOf(tp.slice(0, 5)) > -1; });
+        if (!mine.length) { if (t) t.remove(); return; }
+        if (!t) { t = document.createElement('div'); t.className = 'kmd-cdet'; t.style.cssText = 'font-size:12px;line-height:1.5;color:#fdba74;margin-top:6px;font-weight:500;white-space:normal'; nm.parentNode.insertBefore(t, nm.nextSibling); }
+        var html = mine.map(cLines).join('<div style="border-top:1px dashed #555;margin:6px 0"></div>') +
+          '<div style="color:#94a3b8;margin-top:4px">¿Algo está mal? Borralo del carrito y volvé a armarlo.</div>';
+        if (t.dataset.h !== html) { t.dataset.h = html; t.innerHTML = html; }
+      });
+    } catch (e) {}
+  }
   function reconcile() {
     if (SUCCESS || fixing || !(window.LS && LS.cart && LS.cart.items)) return;
     var items = cartItems(), sig = JSON.stringify(items);
-    fixBadge(); showDist();
+    fixBadge(); showDist(); csync(items); showCustom();
     if (sig === lastSig) return; lastSig = sig;
     var ops = planFix(items); if (!ops.length) return;
     fixing = true;
@@ -380,9 +415,9 @@
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[name="go_to_checkout"], .js-go-checkout-btn, [data-component="cart.checkout-button"]');
     if (!b || b.dataset.kmdOk) return;
-    if (!cartItems().some(function (i) { return i.pid === KIT_ID || i.pid === ADDON_ID || i.pid === PACK_ID; })) return;
+    if (!cartItems().some(function (i) { return i.pid === KIT_ID || i.pid === ADDON_ID || i.pid === PACK_ID || i.pid === CUSTOM_ID; })) return;
     e.preventDefault(); e.stopImmediatePropagation(); fixing = true;
-    freshCart().then(function (items) { return runOps(planFix(items)); }).catch(function () {})
+    freshCart().then(function (items) { csync(items, 1); return runOps(planFix(items)); }).catch(function () {})
       .then(function () { fixing = false; b.dataset.kmdOk = 1; b.click(); });
   }, true);
   function kit(n) {
