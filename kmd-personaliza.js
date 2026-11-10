@@ -388,13 +388,14 @@
   }
   function showCustom() {
     try {
+      document.querySelectorAll('.kmd-cdet').forEach(function (e) { if (!e.closest('[data-store^="cart-item-"]')) e.remove(); });
       var live = cget().filter(function (r) { return !r.sent && Date.now() - r.ts < 7 * 864e5; }).sort(function (a, b) { return a.ts - b.ts; });
       document.querySelectorAll('[data-store="cart-item-' + CUSTOM_ID + '"]').forEach(function (row) {
-        var nm = row.querySelector('.name, .js-cart-item-name') || row, t = row.querySelector('.kmd-cdet');
-        var lab = ((row.querySelector('.name small') || {}).textContent || '').toLowerCase();
+        var nm = row.querySelector('[data-component="line-item.name"], .cart-item-name, .name, .js-cart-item-name'), t = row.querySelector('.kmd-cdet');
+        var lab = ((row.querySelector('small') || {}).textContent || '').toLowerCase();
         var mine = live.filter(function (r) { var tp = cTipo(r.text).toLowerCase(); return !lab || !tp || lab.indexOf(tp.slice(0, 5)) > -1; });
         if (!mine.length) { if (t) t.remove(); return; }
-        if (!t) { t = document.createElement('div'); t.className = 'kmd-cdet'; t.style.cssText = 'font-size:12px;line-height:1.5;color:#fdba74;margin-top:6px;font-weight:500;white-space:normal'; nm.parentNode.insertBefore(t, nm.nextSibling); }
+        if (!t) { t = document.createElement('div'); t.className = 'kmd-cdet'; t.style.cssText = 'font-size:12px;line-height:1.5;color:#fdba74;margin-top:6px;font-weight:500;white-space:normal'; (nm || row).appendChild(t); }
         var html = mine.map(cLines).join('<div style="border-top:1px dashed #555;margin:6px 0"></div>') +
           '<div style="color:#94a3b8;margin-top:4px">¿Algo está mal? Borralo del carrito y volvé a armarlo.</div>';
         if (t.dataset.h !== html) { t.dataset.h = html; t.innerHTML = html; }
