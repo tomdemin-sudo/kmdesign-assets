@@ -1092,7 +1092,27 @@
       }
     }).catch(function () {});
   }
-  function reviews(n) { try { rvPage(); rvProduct(); } catch (e) {} }
+  function rvBadges() {
+    var ids = {};
+    document.querySelectorAll('[data-store^="product-item-name-"]').forEach(function (a) { var id = a.getAttribute('data-store').replace('product-item-name-', ''); if (/^\d+$/.test(id)) (ids[id] = ids[id] || []).push(a); });
+    var hp = document.querySelector('#kmd-home .kh-hero .kh-p');
+    if (hp) (ids[CUSTOM_ID] = ids[CUSTOM_ID] || []).push({ home: hp });
+    Object.keys(ids).slice(0, 12).forEach(function (id) {
+      rvGetJ('rv=lista&p=' + id).then(function (j) {
+        if (!j || !j.ok || !j.n) return;
+        if (!document.getElementById('kmd-rvb-css')) { var st = document.createElement('style'); st.id = 'kmd-rvb-css';
+          st.textContent = '.kmd-rvb{display:block;font:500 13px/1.3 Poppins,sans-serif;color:#fdba74;margin:4px 0 8px}.kmd-rvb b{color:#fb923c;letter-spacing:1px;font-weight:400}#kmd-home .kmd-rvb{font-size:14px;margin:0 0 12px}';
+          document.head.appendChild(st); }
+        var html = '<b>' + '★★★★★'.slice(0, Math.round(j.avg)) + '</b> ' + String(j.avg).replace('.', ',') + ' · ' + j.n + (j.n === 1 ? ' opinión' : ' opiniones');
+        ids[id].forEach(function (el) {
+          var ref = el.home || el, par = ref.parentNode; if (!par || par.querySelector('.kmd-rvb')) return;
+          var d = document.createElement('div'); d.className = 'kmd-rvb'; d.innerHTML = html;
+          if (el.home) par.insertBefore(d, ref); else par.insertBefore(d, ref.nextSibling);
+        });
+      }).catch(function () {});
+    });
+  }
+  function reviews(n) { try { rvPage(); rvProduct(); rvBadges(); } catch (e) {} }
   /* ===== HOME v1 (portada nueva) ===== */
   var HB = 'https://cdn.jsdelivr.net/gh/tomdemin-sudo/kmdesign-assets@main/';
   var homeCss = '[data-store="home-welcome-message"],[data-store="home-slider"],[data-store="home-banner-categories"],[data-store="home-banner-with-image"],[data-store="home-banner-promotional"]{display:none!important}'
@@ -1213,6 +1233,7 @@
       + '<a class="kh-btn" href="' + KIT + '">Armá tu tablero &rarr;</a></div></div></section>';
     anchor.parentNode.insertBefore(h, anchor);
     var b3 = h.querySelector('.kh-m3'); if (b3) b3.addEventListener('click', homeV3);
+    try { rvBadges(); } catch (e) {}
   }
 
 
