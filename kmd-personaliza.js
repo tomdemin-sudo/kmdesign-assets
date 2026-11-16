@@ -372,9 +372,10 @@
     try {
       var all = cget(), now = Date.now(), live = all.filter(function (r) { return !r.sent && now - r.ts < 7 * 864e5; });
       if (!live.length || !items) return;
+      if (!hard && (!document.querySelector('[data-store^="cart-item-"][data-item-id]') || live.some(function (r) { return now - r.ts < 90000; }))) return;
       var N = 0; items.forEach(function (i) { if (i.pid === CUSTOM_ID) N += i.q || 1; });
       live.sort(function (a, b) { return b.ts - a.ts; });
-      var keep = live.filter(function (r, k) { return k < N || (!hard && now - r.ts < 20000); });
+      var keep = live.filter(function (r, k) { return k < N; });
       if (keep.length === live.length) return;
       cset(all.filter(function (r) { return r.sent || keep.indexOf(r) > -1; }));
     } catch (e) {}
