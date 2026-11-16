@@ -1215,7 +1215,7 @@
   }
 
   /* ===== video portamedalla + carrusel fotos reales ===== */
-  var PM_VIDEO = 'https://cdn.jsdelivr.net/gh/tomdemin-sudo/kmdesign-assets@main/portamedalla_video.mp4', PM_POSTER = 'https://cdn.jsdelivr.net/gh/tomdemin-sudo/kmdesign-assets@main/portamedalla_poster.jpg';
+  var PM_VIDEO = 'https://cdn.jsdelivr.net/gh/tomdemin-sudo/kmdesign-assets@main/portamedalla_video.mp4?v=1', PM_POSTER = 'https://cdn.jsdelivr.net/gh/tomdemin-sudo/kmdesign-assets@main/portamedalla_poster.jpg?v=1';
   function kmdVcss() {
     if (document.getElementById('kmd-vcss')) return;
     var st = document.createElement('style'); st.id = 'kmd-vcss';
