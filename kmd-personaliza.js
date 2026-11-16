@@ -797,10 +797,21 @@
       b.style.left = ((C[0] - r) / c.W * 100) + '%'; b.style.top = ((C[1] - r) / c.H * 100) + '%'; b.style.width = (2 * r / c.W * 100) + '%';
       b.addEventListener('click', function () { var inp = drops.querySelector('input[type=file]'); if (inp) inp.click(); }); pic.appendChild(b);
     }
+    var MEDP = { carrera: [354, 322, 228], triatlon: [335, 425, 246] };
+    function medHint(c) {
+      pic.querySelectorAll('.kmd-med').forEach(function (e) { e.remove(); });
+      var m = MEDP[type]; if (!m) return;
+      kmdVcss();
+      var d = document.createElement('div'); d.className = 'kmd-med';
+      d.style.left = ((m[0] - m[2]) / c.W * 100) + '%'; d.style.top = ((m[1] - m[2]) / c.H * 100) + '%'; d.style.width = (2 * m[2] / c.W * 100) + '%';
+      d.innerHTML = '<span class="t">Acá va tu medalla</span><button type="button" class="v">▶ Ver cómo</button>';
+      d.querySelector('.v').addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); kmdVideo(prev); });
+      pic.appendChild(d);
+    }
     function draw() {
       var c = CP[type]; svg.setAttribute('viewBox', '0 0 ' + c.W + ' ' + c.H); svg.innerHTML = '';
       maps.forEach(function (m) { try { m.map && m.map.remove(); } catch (e) {} m.div.remove(); }); maps = [];
-      pic.querySelectorAll('.kmd-hot').forEach(function (e) { e.remove(); });
+      pic.querySelectorAll('.kmd-hot').forEach(function (e) { e.remove(); }); medHint(c);
       var T = tracks(), has = T.some(Boolean);
       credit.hidden = !has; dis.hidden = !has; b3d.hidden = !(has && CAN3D);
       c.legs.forEach(function (leg, i) {
@@ -1203,10 +1214,49 @@
     }).catch(function () { if (st.on) msg.textContent = 'No pudimos armar la vista 3D ahora. Probá de nuevo en un rato.'; });
   }
 
+  /* ===== video portamedalla + carrusel fotos reales ===== */
+  var PM_VIDEO = 'https://cdn.jsdelivr.net/gh/tomdemin-sudo/kmdesign-assets@main/portamedalla_video.mp4', PM_POSTER = 'https://cdn.jsdelivr.net/gh/tomdemin-sudo/kmdesign-assets@main/portamedalla_poster.jpg';
+  function kmdVcss() {
+    if (document.getElementById('kmd-vcss')) return;
+    var st = document.createElement('style'); st.id = 'kmd-vcss';
+    st.textContent = '.kmd-vid{position:absolute;inset:0;z-index:30;background:#0b0c0f;display:flex;align-items:center;justify-content:center;overflow:hidden}'
+      + '.kmd-vid video{height:100%;max-width:100%;object-fit:contain;display:block}'
+      + '.kmd-vid .x{position:absolute;right:10px;top:10px;background:#111!important;color:#fff!important;border:1px solid #333;border-radius:99px;padding:7px 13px;font:600 12px Poppins,sans-serif;cursor:pointer;z-index:2}'
+      + '.kmd-vid .b{position:absolute;left:10px;top:10px;background:#fb923c;color:#111;font:600 10px Poppins,sans-serif;padding:4px 8px;border-radius:6px;z-index:2;letter-spacing:.04em}'
+      + '.kmd-pmv{margin:18px 0;max-width:320px}.kmd-pmv b{display:block;color:#fff;margin-bottom:8px;font-size:15px}.kmd-pmv video{width:100%;border-radius:12px;display:block;background:#000}'
+      + '.kmd-med{position:absolute;aspect-ratio:1;border-radius:50%;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4cqw;pointer-events:none}'
+      + '.kmd-med .t{font:600 2.3cqw/1.1 Inter,Poppins,sans-serif;color:#8a8a8a;white-space:nowrap}'
+      + '.kmd-med .v{pointer-events:auto;background:#fb923c!important;color:#111!important;border:0;border-radius:99px;padding:.8cqw 1.8cqw;font:700 1.6cqw/1 Poppins,sans-serif;cursor:pointer;box-shadow:0 .4cqw 1.2cqw rgba(0,0,0,.25);animation:kmdpulse 2s ease-in-out infinite}'
+      + '@keyframes kmdpulse{50%{transform:scale(1.08)}}';
+    document.head.appendChild(st);
+  }
+  function kmdVideo(host) {
+    if (!host || host.querySelector('.kmd-vid')) return;
+    kmdVcss();
+    var v = document.createElement('div'); v.className = 'kmd-vid';
+    v.innerHTML = '<video src="' + PM_VIDEO + '" poster="' + PM_POSTER + '" autoplay muted playsinline loop controls></video><span class="b">CÓMO SE COLOCA LA MEDALLA</span><button type="button" class="x">✕ Cerrar</button>';
+    v.querySelector('.x').addEventListener('click', function (e) { e.preventDefault(); v.remove(); });
+    host.appendChild(v);
+  }
+  function pmDesc(n) {
+    var pid = window.LS && LS.product && LS.product.id;
+    var d = document.querySelector('.js-product-description, [data-store="product-description"], .product-description');
+    if (!pid || !d) { if ((n || 0) < 20) setTimeout(function () { pmDesc((n || 0) + 1); }, 300); return; }
+    if ([CUSTOM_ID, 369194543, 371553669].indexOf(pid) < 0 || document.querySelector('.kmd-pmv')) return;
+    kmdVcss();
+    var b = document.createElement('div'); b.className = 'kmd-pmv';
+    b.innerHTML = '<b>Cómo se coloca la medalla en el portamedalla</b><video src="' + PM_VIDEO + '" poster="' + PM_POSTER + '" controls muted playsinline loop preload="metadata"></video>';
+    d.appendChild(b);
+  }
+  var homeCss4 = '.kh-car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;margin-top:20px;padding-bottom:6px;scrollbar-width:none}.kh-car::-webkit-scrollbar{display:none}'
+    + '.kh-car img{height:380px;width:auto;max-width:none;flex:none;border-radius:14px;scroll-snap-align:center;display:block}@media(min-width:768px){.kh-car img{height:440px}}'
+    + '.kh-carnav{display:flex;gap:10px;justify-content:center;margin-top:14px}.kh-carnav button{width:40px;height:40px;border-radius:50%;border:1px solid #2a3340;background:#12161d;color:#fdba74;font-size:22px;line-height:1;cursor:pointer;padding:0}'
+    + '.kh-m3.kh-p3{left:31.47%;top:49.09%;width:28.17%}@media(min-width:768px){.kh-m3.kh-p3{left:32.59%;top:44.89%;width:26.46%}}';
+
   function home(n) {
     if (location.pathname !== '/' && location.pathname !== '') return;
     if (!document.getElementById('kmd-home-css')) {
-      var st = document.createElement('style'); st.id = 'kmd-home-css'; st.textContent = homeCss + homeCss3;
+      var st = document.createElement('style'); st.id = 'kmd-home-css'; st.textContent = homeCss + homeCss3 + homeCss4;
       document.head.appendChild(st);
     }
     if (document.getElementById('kmd-home')) return;
@@ -1216,7 +1266,7 @@
     var h = document.createElement('div'); h.id = 'kmd-home';
     h.innerHTML =
       '<section class="kh-hero">'
-      + '<div class="kh-pic"><picture><source media="(min-width:768px)" srcset="' + HB + 'home_hero_d2.webp"><img src="' + HB + 'home_hero_m2.webp" width="900" height="792" alt="Cuadro de la Maratón de Buenos Aires con portamedalla y mapa en relieve 3D" fetchpriority="high"></picture><button type="button" class="kh-m3" aria-label="Ver el mapa en 3D"><span>Ver en 3D</span></button></div>'
+      + '<div class="kh-pic"><picture><source media="(min-width:768px)" srcset="' + HB + 'home_hero_d2.webp"><img src="' + HB + 'home_hero_m2.webp" width="900" height="792" alt="Cuadro de la Maratón de Buenos Aires con portamedalla y mapa en relieve 3D" fetchpriority="high"></picture><button type="button" class="kh-m3" aria-label="Ver el mapa en 3D"><span>Ver en 3D</span></button><button type="button" class="kh-m3 kh-p3" aria-label="Ver cómo se coloca la medalla"><span>Ver cómo</span></button></div>'
       + '<div class="kh-tx"><h2 class="kh-h">Tu carrera,<br>en relieve 3D</h2>'
       + '<p class="kh-p">Subí el GPX de tu reloj y mirá tu cuadro al instante: mapa real, tus datos y lugar para tu medalla.</p>'
       + '<a class="kh-btn" href="' + CU + '">Armá tu cuadro &rarr;</a> <a class="kh-btn2" href="/productos/">Ver ejemplos</a>'
@@ -1227,17 +1277,19 @@
       + '<div class="kh-nogps"><b>¿No tenés tu archivo GPX? No pasa nada.</b><br>Decinos qué carrera corriste y nosotros conseguimos el recorrido.</div>'
       + '<p style="margin-top:22px"><a class="kh-btn" href="' + CU + '">Armá tu cuadro &rarr;</a></p></section>'
       + '<section class="kh-sec" style="padding-top:10px"><h3 class="kh-t">Así queda en la vida real</h3><p class="kh-sub">Mapa real en relieve, impreso en 3D.</p>'
-      + '<div class="kh-real"><img src="' + HB + 'home_real1.webp" width="600" height="800" loading="lazy" alt="Cuadro IRONMAN 70.3 con portamedalla y tres mapas en relieve"><img src="' + HB + 'home_real2.webp" width="600" height="800" loading="lazy" alt="Detalle del mapa en relieve 3D de la Maratón de Buenos Aires"></div></section>'
+      + '<div class="kh-car"><img src="' + HB + 'real_01.webp" width="870" height="900" loading="lazy" alt="Cuadro de la Maratón de Buenos Aires colgado en la pared"><img src="' + HB + 'real_02.webp" width="1598" height="900" loading="lazy" alt="Cuadro de la Maratón de Buenos Aires visto de frente"><img src="' + HB + 'real_03.webp" width="567" height="900" loading="lazy" alt="Detalle del portamedalla y el mapa en relieve 3D"><img src="' + HB + 'real_04.webp" width="841" height="900" loading="lazy" alt="Cuadro de triatlón IRONMAN 5150 con tres mapas"><img src="' + HB + 'real_05.webp" width="639" height="900" loading="lazy" alt="Cuadro de la Chicago Marathon colgado"></div><div class="kh-carnav"><button type="button" data-d="-1" aria-label="Anterior">‹</button><button type="button" data-d="1" aria-label="Siguiente">›</button></div></section>'
       + '<section class="kh-kit"><div class="kh-in"><img src="' + HB + 'home_kit.webp" width="800" height="999" loading="lazy" alt="Kit MIS RÉCORDS con placas 3D de tus mejores tiempos">'
       + '<div class="kh-tx"><h3 class="kh-t" style="font-size:28px">Kit MIS RÉCORDS</h3>'
       + '<p class="kh-p" style="margin-bottom:20px">Tus mejores tiempos en placas 3D intercambiables: 5K, 10K, maratón, IRONMAN, HYROX y más. Lo actualizás cada vez que bajás tu marca.</p>'
       + '<a class="kh-btn" href="' + KIT + '">Armá tu tablero &rarr;</a></div></div></section>';
     anchor.parentNode.insertBefore(h, anchor);
     var b3 = h.querySelector('.kh-m3'); if (b3) b3.addEventListener('click', homeV3);
+    var p3 = h.querySelector('.kh-p3'); if (p3) p3.addEventListener('click', function () { kmdVideo(h.querySelector('.kh-pic')); });
+    var cn = h.querySelector('.kh-carnav'); if (cn) cn.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var g = h.querySelector('.kh-car'); g.scrollBy({ left: (+b.dataset.d) * Math.max(240, g.clientWidth * 0.7), behavior: 'smooth' }); });
     try { rvBadges(); } catch (e) {}
   }
 
 
-  function start() { boot(0); kit(0); custom(0); reviews(0); home(0); }
+  function start() { boot(0); kit(0); custom(0); reviews(0); home(0); pmDesc(0); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
