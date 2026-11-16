@@ -977,10 +977,10 @@
       '.kmd-rv .b.or{background:#f26a1d}.kmd-rv .b.full{width:100%}.kmd-rv .b[disabled]{opacity:.6}' +
       '.kmd-rv .lg{font-size:12px;color:#6b7280;margin:12px 0 0;line-height:1.5}.kmd-rv .err{color:#b91c1c;font-size:14px;margin:8px 0}' +
       '.kmd-rv .thx{text-align:center;padding:30px 6px}.kmd-rv .thx .ic{font-size:52px}' +
-      '.kmd-rvs{font-size:15px;margin:6px 0 10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}.kmd-rvs b{color:#ff9a3c;letter-spacing:1px}.kmd-rvs u{color:#555}' +
-      '.kmd-rvl{margin:30px 0;clear:both}.kmd-rvl h3{font-size:20px;margin:0 0 14px}.kmd-rvl .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}' +
-      '.kmd-rvl .c{border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;background:#fff}.kmd-rvl .c img{width:100%;aspect-ratio:1;object-fit:cover;display:block}' +
-      '.kmd-rvl .c div{padding:12px 14px;font-size:14px;line-height:1.5}.kmd-rvl .c b{color:#ff9a3c;letter-spacing:1px}.kmd-rvl .c i{display:block;color:#6b7280;font-style:normal;font-size:12.5px;margin-top:6px}';
+      '.kmd-rvs{font-size:14px;margin:4px 0 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:rgba(230,126,34,.1);border:1px solid rgba(251,146,60,.45);border-radius:99px;padding:5px 12px}.kmd-rvs b{color:#fb923c;letter-spacing:1px}.kmd-rvs .n{color:#fdba74;font-weight:600}.kmd-rvs:hover{background:rgba(230,126,34,.2)}' +
+      '.kmd-rvl{margin:30px 0;clear:both;scroll-margin-top:130px}.kmd-rvl h3{font-size:20px;margin:0 0 14px;color:#fff!important}.kmd-rvl .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}' +
+      '.kmd-rvl .c{border:1px solid #2a3340;border-radius:14px;overflow:hidden;background:#12161d;color:#e5e7eb}.kmd-rvl .c img{width:100%;aspect-ratio:1;object-fit:cover;display:block}' +
+      '.kmd-rvl .c div{padding:12px 14px;font-size:14px;line-height:1.5}.kmd-rvl .c b{color:#ff9a3c;letter-spacing:1px}.kmd-rvl .c i{display:block;color:#94a3b8;font-style:normal;font-size:12.5px;margin-top:6px}';
     document.head.appendChild(s);
   }
   function rvGetJ(q) { return fetch(APP + '?' + q).then(function (r) { return r.json(); }); }
@@ -1086,9 +1086,9 @@
       var t = document.querySelector('h1.js-product-name, h1[data-store="product-name"], .js-product-name, h1');
       if (t) {
         var s = document.createElement('div'); s.className = 'kmd-rvs';
-        s.innerHTML = '<b>' + stars(j.avg) + '</b><u>' + j.n + (j.n === 1 ? ' opinión' : ' opiniones') + '</u>';
-        s.onclick = function () { sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
-        t.parentNode.insertBefore(s, t.nextSibling);
+        s.innerHTML = '<b>' + stars(j.avg) + '</b><span class="n">' + j.n + (j.n === 1 ? ' opinión' : ' opiniones') + '</span>';
+        s.onclick = function () { var nav = document.querySelector('.js-main-navbar, .nav-main, header'), off = (nav ? nav.getBoundingClientRect().height : 90) + 24; window.scrollTo({ top: sec.getBoundingClientRect().top + window.pageYOffset - off, behavior: 'smooth' }); };
+        var pc = document.querySelector('.product-price-container, .js-price-display'); if (pc && pc.parentNode) pc.parentNode.insertBefore(s, pc.nextSibling); else t.parentNode.insertBefore(s, t.nextSibling);
       }
     }).catch(function () {});
   }
@@ -1124,8 +1124,8 @@
     + '.kh-kit img{width:100%;height:auto;display:block}'
     + '.kh-kit .kh-tx{padding:28px 20px 40px;text-align:center}'
     + '@media(min-width:768px){'
-    + '.kh-hero{grid-template-columns:minmax(0,1fr) minmax(0,640px);justify-content:center;gap:2vw;text-align:left;align-items:center;padding:10px 6vw}'
-    + '.kh-hero .kh-tx{order:-1;padding:30px 0;max-width:520px;justify-self:end}'
+    + '.kh-hero{grid-template-columns:minmax(0,520px) minmax(0,640px);justify-content:center;gap:48px;text-align:left;align-items:center;padding:10px 4vw}'
+    + '.kh-hero .kh-tx{order:-1;padding:30px 0;max-width:520px;justify-self:start}'
     + '#kmd-home h2.kh-h{font-size:52px}'
     + '.kh-p{margin-left:0;font-size:16px}'
     + '.kh-chips{justify-content:flex-start}'
