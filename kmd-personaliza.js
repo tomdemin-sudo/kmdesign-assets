@@ -1240,7 +1240,7 @@
   }
   function pmDesc(n) {
     var pid = window.LS && LS.product && LS.product.id;
-    var d = document.querySelector('.js-product-description, [data-store="product-description"], .product-description');
+    var d = document.querySelector('.js-product-description, [data-store="product-description"], .product-description') || [].slice.call(document.querySelectorAll('.user-content')).filter(function (e) { return /cuadro|medalla/i.test(e.textContent); })[0];
     if (!pid || !d) { if ((n || 0) < 20) setTimeout(function () { pmDesc((n || 0) + 1); }, 300); return; }
     if ([CUSTOM_ID, 369194543, 371553669].indexOf(pid) < 0 || document.querySelector('.kmd-pmv')) return;
     kmdVcss();
