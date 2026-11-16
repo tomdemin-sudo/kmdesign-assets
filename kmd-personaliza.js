@@ -978,7 +978,7 @@
       '.kmd-rv .lg{font-size:12px;color:#6b7280;margin:12px 0 0;line-height:1.5}.kmd-rv .err{color:#b91c1c;font-size:14px;margin:8px 0}' +
       '.kmd-rv .thx{text-align:center;padding:30px 6px}.kmd-rv .thx .ic{font-size:52px}' +
       '.kmd-rvs{font-size:14px;margin:4px 0 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:rgba(230,126,34,.1);border:1px solid rgba(251,146,60,.45);border-radius:99px;padding:5px 12px}.kmd-rvs b{color:#fb923c;letter-spacing:1px}.kmd-rvs .n{color:#fdba74;font-weight:600}.kmd-rvs:hover{background:rgba(230,126,34,.2)}' +
-      '.kmd-rvl{margin:30px 0;clear:both;scroll-margin-top:130px}.kmd-rvl h3{font-size:20px;margin:0 0 14px;color:#fff!important}.kmd-rvl .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}' +
+      '.kmd-rvl{margin:30px 0;clear:both;scroll-margin-top:130px}.kmd-rvl h3{font-size:20px;margin:0 0 14px;color:#fff!important}.kmd-rvl .g{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:2px 0 10px;scrollbar-width:thin}.kmd-rvl .g>.c{flex:0 0 84%;scroll-snap-align:start}@media(min-width:768px){.kmd-rvl .g>.c{flex-basis:calc(50% - 6px)}}.kmd-rvl .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px}.kmd-rvl .hd h3{margin:0!important}.kmd-rvl .nav{display:flex;gap:8px;flex:none}.kmd-rvl .nav button{width:34px;height:34px;border-radius:50%;border:1px solid #2a3340;background:#12161d;color:#fdba74;font-size:20px;line-height:1;cursor:pointer;padding:0}.kmd-rvl .nav button:hover{border-color:#fb923c}' +
       '.kmd-rvl .c{border:1px solid #2a3340;border-radius:14px;overflow:hidden;background:#12161d;color:#e5e7eb}.kmd-rvl .c img{width:100%;aspect-ratio:1;object-fit:cover;display:block}' +
       '.kmd-rvl .c div{padding:12px 14px;font-size:14px;line-height:1.5}.kmd-rvl .c b{color:#ff9a3c;letter-spacing:1px}.kmd-rvl .c i{display:block;color:#94a3b8;font-style:normal;font-size:12.5px;margin-top:6px}';
     document.head.appendChild(s);
@@ -1078,9 +1078,10 @@
       rvCss();
       var stars = function (r) { return '★★★★★'.slice(0, Math.round(r)) + '<span style="color:#d1d5db">' + '★★★★★'.slice(0, 5 - Math.round(r)) + '</span>'; };
       var sec = document.createElement('div'); sec.className = 'kmd-rvl'; sec.id = 'opiniones';
-      sec.innerHTML = '<h3>Opiniones de clientes · ' + j.avg.toString().replace('.', ',') + ' ★ (' + j.n + ')</h3><div class="g">' + j.list.map(function (r) {
+      sec.innerHTML = '<div class="hd"><h3>Opiniones de clientes · ' + j.avg.toString().replace('.', ',') + ' ★ (' + j.n + ')</h3>' + (j.n > 1 ? '<div class="nav"><button type="button" data-d="-1" aria-label="Anteriores">‹</button><button type="button" data-d="1" aria-label="Siguientes">›</button></div>' : '') + '</div><div class="g">' + j.list.map(function (r) {
         return '<div class="c">' + (r.f ? '<img loading="lazy" src="' + esc(r.f) + '" alt="Foto de ' + esc(r.n) + '">' : '') + '<div><b>' + stars(r.r) + '</b><br>' + esc(r.c) + '<i>' + esc(r.n) + ' · ' + esc(r.d) + '</i></div></div>';
       }).join('') + '</div>';
+      var nv = sec.querySelector('.nav'); if (nv) nv.onclick = function (e) { var b = e.target.closest('button'); if (!b) return; var g = sec.querySelector('.g'); g.scrollBy({ left: (+b.dataset.d) * g.clientWidth * 0.9, behavior: 'smooth' }); };
       var anchor = document.querySelector('.js-product-description, [data-store="product-description"], .product-description, #product-description') || document.querySelector('form.js-product-form, #product_form');
       if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(sec, anchor.nextSibling); else (document.querySelector('main') || document.body).appendChild(sec);
       var t = document.querySelector('h1.js-product-name, h1[data-store="product-name"], .js-product-name, h1');
